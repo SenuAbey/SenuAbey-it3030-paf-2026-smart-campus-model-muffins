@@ -223,8 +223,8 @@ const handleSubmit = async () => {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: "14px" }}>
           {resources.map((r) => (
             <div key={r.id} style={{
-              background: "#fff", border: "1px solid #eee", borderRadius: "12px", padding: "16px"
-            }}>
+              background: "#fff", border: "1px solid #eee", borderRadius: "12px", padding: "16px", cursor: "pointer"
+            }} onClick={() => window.location.href = `/resources/${r.id}`}>
               <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
                 <span style={{
                   fontSize: "11px", fontWeight: "600", padding: "3px 8px", borderRadius: "20px",
