@@ -12,8 +12,6 @@ import smart_campus_api.enums.ResourceStatus;
 import smart_campus_api.enums.ResourceType;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 
 @Entity
 @Table(name = "resources")
@@ -55,6 +53,10 @@ public class Resource {
     private Integer bufferMinutes = 15;
     private Integer maxBookingHours = 4;
     private Integer maxAdvanceDays = 14;
+
+    @ManyToOne
+    @JoinColumn(name = "group_id")
+    private ResourceGroup group;
 
     private String createdBy;
 
