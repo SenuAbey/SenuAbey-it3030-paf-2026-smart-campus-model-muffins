@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import smart_campus_api.dto.ResourceRequestDTO;
 import smart_campus_api.dto.ResourceResponseDTO;
 import smart_campus_api.enums.ResourceStatus;
@@ -79,4 +80,17 @@ public class ResourceController {
     public ResponseEntity<Map<String, Object>> getStats() {
         return ResponseEntity.ok(resourceService.getDashboardStats());
     }
+
+    // POST - Upload image for a resource
+    @PostMapping("/{id}/image")
+    public ResponseEntity<ResourceResponseDTO> uploadImage(
+            @PathVariable String id,
+            @RequestParam("file") MultipartFile file) {
+        try {
+            return ResponseEntity.ok(resourceService.uploadImage(id, file));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
 }

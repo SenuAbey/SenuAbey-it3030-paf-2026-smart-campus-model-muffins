@@ -13,6 +13,7 @@ import smart_campus_api.entity.Resource;
 import smart_campus_api.enums.ResourceStatus;
 import smart_campus_api.enums.ResourceType;
 import smart_campus_api.repository.ResourceRepository;
+import smart_campus_api.service.ImageStorageService;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -25,6 +26,7 @@ import java.util.stream.Collectors;
 public class ResourceService {
 
     private final ResourceRepository resourceRepository;
+    private final ImageStorageService imageStorageService;
 
     public ResourceResponseDTO createResource(ResourceRequestDTO dto, String createdBy) {
         Resource resource = mapToEntity(dto);
@@ -132,4 +134,19 @@ public class ResourceService {
                 .updatedAt(resource.getUpdatedAt())
                 .build();
     }
+
+    public ResourceResponseDTO uploadImage(String id, org.springframework.web.multipart.MultipartFile file) throws java.io.IOException {
+        Resource resource = resourceRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Resource not found: " + id));
+
+        if (resource.getImageUrl() != null) {
+            imageStorageService.deleteImage(resource.getImageUrl());
+        }
+
+        String imageUrl = imageStorageService.saveImage(file);
+        resource.setImageUrl(imageUrl);
+        return mapToDTO(resourceRepository.save(resource));
+    }
+
+
 }

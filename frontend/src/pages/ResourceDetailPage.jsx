@@ -96,6 +96,45 @@ export default function ResourceDetailPage() {
             {resource.description}
           </p>
         )}
+
+        {/* Image Section */}
+        {resource.imageUrl && (
+          <img src={`http://localhost:8081${resource.imageUrl}`} alt={resource.name}
+            style={{ width: "100%", maxHeight: "300px", objectFit: "cover", borderRadius: "8px", marginTop: "16px" }} />
+        )}
+
+        {/* Image Upload */}
+        <div style={{ marginTop: "16px" }}>
+          <input type="file" accept="image/*" id="img-upload" style={{ display: "none" }}
+            onChange={async (e) => {
+              const file = e.target.files[0];
+              if (!file) return;
+              const formData = new FormData();
+              formData.append("file", file);
+              try {
+                const res = await fetch(`http://localhost:8081/api/v1/resources/${id}/image`, {
+                  method: "POST",
+                  body: formData
+                });
+                if (res.ok) {
+                  toast.success("Image uploaded!");
+                  fetchResource();
+                } else {
+                  toast.error("Upload failed!");
+                }
+              } catch {
+                toast.error("Upload failed!");
+              }
+            }}
+          />
+          <label htmlFor="img-upload" style={{
+            display: "inline-block", padding: "7px 16px", borderRadius: "8px",
+            border: "1px solid #ddd", cursor: "pointer", fontSize: "13px"
+          }}>
+            {resource.imageUrl ? "Change Image" : "Upload Image"}
+          </label>
+        </div>
+
       </div>
 
       {/* Details Grid */}
