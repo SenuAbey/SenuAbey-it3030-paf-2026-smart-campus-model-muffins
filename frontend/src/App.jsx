@@ -1,16 +1,25 @@
+import React, { useState } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import CataloguePage from './pages/CataloguePage';
 import ResourceDetailPage from './pages/ResourceDetailPage';
-import './App.css';
+import ResourceGroupPage from './pages/ResourceGroupPage';
+import './global.css';
+
+export const RoleContext = React.createContext('STUDENT');
 
 function App() {
+  const [role, setRole] = useState('STUDENT');
+
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<CataloguePage />} />
-        <Route path="/resources/:id" element={<ResourceDetailPage />} />
-      </Routes>
-    </BrowserRouter>
+    <RoleContext.Provider value={{ role, setRole }}>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<CataloguePage />} />
+          <Route path="/resources/:id" element={<ResourceDetailPage />} />
+          <Route path="/resource-groups" element={<ResourceGroupPage />} />
+        </Routes>
+      </BrowserRouter>
+    </RoleContext.Provider>
   );
 }
 
