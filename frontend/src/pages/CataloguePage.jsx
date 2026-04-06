@@ -1,8 +1,9 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { getResources, deleteResource, updateResourceStatus, getResourceStats } from "../api/resourceApi";
 import useResourceStore from "../store/resourceStore";
 import toast, { Toaster } from "react-hot-toast";
+import { RoleContext } from "../App";
 
 const BASE = "http://localhost:8081/api/v1";
 
@@ -16,18 +17,18 @@ const STATUSES = ["ACTIVE", "OUT_OF_SERVICE", "UNDER_MAINTENANCE", "DECOMMISSION
 const TIERS = ["INSTANT", "DELEGATED", "ADMIN"];
 
 const TYPE_META = {
-  LECTURE_HALL:    { label: "Lecture Halls",     emoji: "🏫", color: "#E6F1FB", text: "#185FA5", img: "https://images.unsplash.com/photo-1541339907198-e08756ebafe3?w=600&q=80" },
-  LAB:             { label: "Laboratories",       emoji: "🔬", color: "#EAF3DE", text: "#3B6D11", img: "https://images.unsplash.com/photo-1581092921461-eab62e92c731?w=600&q=80" },
-  MEETING_ROOM:    { label: "Meeting Rooms",      emoji: "🤝", color: "#EEEDFE", text: "#534AB7", img: "https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=600&q=80" },
-  EQUIPMENT:       { label: "Equipment",          emoji: "🎥", color: "#FAEEDA", text: "#854F0B", img: "https://images.unsplash.com/photo-1558494949-ef010cbdcc51?w=600&q=80" },
-  AUDITORIUM:      { label: "Auditoriums",        emoji: "🎭", color: "#FAECE7", text: "#993C1D", img: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=600&q=80" },
-  GYM:             { label: "Gymnasium",          emoji: "💪", color: "#E1F5EE", text: "#0F6E56", img: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=600&q=80" },
-  SWIMMING_POOL:   { label: "Swimming Pool",      emoji: "🏊", color: "#E6F1FB", text: "#185FA5", img: "https://images.unsplash.com/photo-1575429198097-0414ec08e8cd?w=600&q=80" },
-  SPORTS_COURT:    { label: "Sports Courts",      emoji: "🏀", color: "#EAF3DE", text: "#3B6D11", img: "https://images.unsplash.com/photo-1546519638-68e109498ffc?w=600&q=80" },
-  GROUND:          { label: "Grounds & Fields",   emoji: "⚽", color: "#EAF3DE", text: "#3B6D11", img: "https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=600&q=80" },
-  STUDY_ROOM:      { label: "Study Rooms",        emoji: "📚", color: "#EEEDFE", text: "#534AB7", img: "https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=600&q=80" },
-  CONFERENCE_ROOM: { label: "Conference Rooms",   emoji: "💼", color: "#FAECE7", text: "#993C1D", img: "https://images.unsplash.com/photo-1505373633560-fa9109017684?w=600&q=80" },
-  OTHER:           { label: "Other Resources",    emoji: "📦", color: "#F1EFE8", text: "#5F5E5A", img: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=600&q=80" },
+  LECTURE_HALL:    { label: "Lecture Halls",     emoji: "🏫", img: "https://images.unsplash.com/photo-1541339907198-e08756ebafe3?w=600&q=80" },
+  LAB:             { label: "Laboratories",       emoji: "🔬", img: "https://images.unsplash.com/photo-1581092921461-eab62e92c731?w=600&q=80" },
+  MEETING_ROOM:    { label: "Meeting Rooms",      emoji: "🤝", img: "https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=600&q=80" },
+  EQUIPMENT:       { label: "Equipment",          emoji: "🎥", img: "https://images.unsplash.com/photo-1558494949-ef010cbdcc51?w=600&q=80" },
+  AUDITORIUM:      { label: "Auditoriums",        emoji: "🎭", img: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=600&q=80" },
+  GYM:             { label: "Gymnasium",          emoji: "💪", img: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=600&q=80" },
+  SWIMMING_POOL:   { label: "Swimming Pool",      emoji: "🏊", img: "https://images.unsplash.com/photo-1575429198097-0414ec08e8cd?w=600&q=80" },
+  SPORTS_COURT:    { label: "Sports Courts",      emoji: "🏀", img: "https://images.unsplash.com/photo-1546519638-68e109498ffc?w=600&q=80" },
+  GROUND:          { label: "Grounds & Fields",   emoji: "⚽", img: "https://images.unsplash.com/photo-1529900748604-07564a03e7a6?w=600&q=80" },
+  STUDY_ROOM:      { label: "Study Rooms",        emoji: "📚", img: "https://images.unsplash.com/photo-1497633762265-9d179a990aa6?w=600&q=80" },
+  CONFERENCE_ROOM: { label: "Conference Rooms",   emoji: "💼", img: "https://images.unsplash.com/photo-1505373633560-fa9109017684?w=600&q=80" },
+  OTHER:           { label: "Other Resources",    emoji: "📦", img: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=600&q=80" },
 };
 
 const statusColor = {
@@ -37,6 +38,7 @@ const statusColor = {
 
 export default function CataloguePage() {
   const navigate = useNavigate();
+  const { role, setRole } = useContext(RoleContext);
   const { filters, setFilters, resetFilters } = useResourceStore();
   const [view, setView] = useState("categories");
   const [selectedType, setSelectedType] = useState(null);
@@ -58,9 +60,7 @@ export default function CataloguePage() {
       const res = await getResources({ size: 100 });
       const all = res.data.content;
       const counts = {};
-      RESOURCE_TYPES.forEach(t => {
-        counts[t] = all.filter(r => r.type === t).length;
-      });
+      RESOURCE_TYPES.forEach(t => { counts[t] = all.filter(r => r.type === t).length; });
       setCategoryCounts(counts);
     } catch {}
   };
@@ -90,14 +90,8 @@ export default function CataloguePage() {
     } catch {}
   };
 
-  useEffect(() => {
-    fetchAllResources();
-    fetchStats();
-  }, []);
-
-  useEffect(() => {
-    if (view === "resources") fetchResources(selectedType);
-  }, [filters, view, selectedType]);
+  useEffect(() => { fetchAllResources(); fetchStats(); }, []);
+  useEffect(() => { if (view === "resources") fetchResources(selectedType); }, [filters, view, selectedType]);
 
   const handleCategoryClick = (type) => {
     setSelectedType(type);
@@ -164,13 +158,11 @@ export default function CataloguePage() {
     if (!window.confirm("Delete this resource?")) return;
     try {
       await deleteResource(id);
-      toast.success("Resource deleted!");
+      toast.success("Deleted!");
       fetchResources(selectedType);
       fetchAllResources();
       fetchStats();
-    } catch {
-      toast.error("Failed to delete resource");
-    }
+    } catch { toast.error("Failed to delete"); }
   };
 
   const handleStatusChange = async (id, status, e) => {
@@ -180,85 +172,85 @@ export default function CataloguePage() {
       toast.success("Status updated!");
       fetchResources(selectedType);
       fetchStats();
-    } catch {
-      toast.error("Failed to update status");
-    }
+    } catch { toast.error("Failed to update status"); }
   };
 
+  const isAdmin = role === "ADMIN";
+
   return (
-    <div style={{ minHeight: "100vh", background: "#f0f2f5", fontFamily: "Segoe UI, sans-serif" }}>
+    <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
       <Toaster position="top-right" />
 
       {/* Header */}
-      <header style={{
-        background: "#fff", borderBottom: "4px solid #F39200",
-        padding: "12px 5%", display: "flex", justifyContent: "space-between",
-        alignItems: "center", position: "sticky", top: 0, zIndex: 100,
-        boxShadow: "0 2px 10px rgba(0,0,0,0.1)"
-      }}>
-        <div style={{ fontSize: "22px", fontWeight: "800", color: "#0053A0", cursor: "pointer" }}
-          onClick={() => { setView("categories"); setSelectedType(null); }}>
-          UNI <span style={{ color: "#F39200", fontWeight: "300" }}>Campus Hub</span>
+      <header className="app-header">
+        <div className="app-logo" onClick={() => { setView("categories"); setSelectedType(null); }}>
+          UNI <span>Campus Hub</span>
         </div>
         <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-          {stats && (
-            <span style={{ fontSize: "13px", color: "#888" }}>
-              {stats.totalResources} resources · {stats.activeResources} active
-            </span>
+          {/* Role Toggle */}
+          <div className="role-toggle">
+            <button className={`role-btn ${role === "STUDENT" ? "active" : ""}`} onClick={() => setRole("STUDENT")}>
+              👤 Student
+            </button>
+            <button className={`role-btn ${role === "ADMIN" ? "active" : ""}`} onClick={() => setRole("ADMIN")}>
+              ⚙️ Admin
+            </button>
+          </div>
+          {isAdmin && (
+            <>
+              <button className="btn btn-secondary" onClick={() => navigate("/resource-groups")}>Manage Groups</button>
+              <button className="btn btn-primary" onClick={openAddModal}>+ Add Resource</button>
+            </>
           )}
-          <button onClick={() => navigate("/resource-groups")} style={{
-            padding: "7px 14px", borderRadius: "8px", border: "1px solid #ddd",
-            background: "transparent", cursor: "pointer", fontSize: "13px"
-          }}>Manage Groups</button>
-          <button onClick={openAddModal} style={{
-            padding: "7px 16px", background: "#0053A0", color: "#fff",
-            border: "none", borderRadius: "8px", cursor: "pointer", fontSize: "13px", fontWeight: "600"
-          }}>+ Add Resource</button>
         </div>
       </header>
 
       {/* Banner */}
-      <div style={{
-        background: "linear-gradient(rgba(0,51,102,0.88), rgba(0,83,160,0.88)), url('https://images.unsplash.com/photo-1541339907198-e08756ebafe3?w=1200&q=80')",
-        backgroundSize: "cover", backgroundPosition: "center",
-        color: "#fff", padding: "50px 8%"
+      <div className="app-banner" style={{
+        backgroundImage: "linear-gradient(rgba(0,51,102,0.88), rgba(0,83,160,0.88)), url('https://images.unsplash.com/photo-1541339907198-e08756ebafe3?w=1200&q=80')"
       }}>
         {view === "categories" ? (
           <>
-            <div style={{ fontSize: "13px", opacity: 0.7, marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.1em" }}>Smart Campus Operations Hub</div>
-            <h1 style={{ fontSize: "36px", fontWeight: "300", margin: "0 0 8px" }}>
+            <div style={{ fontSize: "12px", opacity: 0.7, marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.1em" }}>
+              Smart Campus Operations Hub
+            </div>
+            <h1 style={{ fontSize: "36px", fontWeight: "300", margin: "0 0 8px", color: "#fff" }}>
               Facilities & Assets <strong style={{ fontWeight: "800" }}>Catalogue</strong>
             </h1>
-            <p style={{ opacity: 0.8, margin: 0, fontSize: "15px" }}>Select a category to browse available resources</p>
+            <p style={{ opacity: 0.8, margin: 0, fontSize: "15px", color: "#fff" }}>
+              {isAdmin ? "Managing all campus resources" : "Browse and book campus resources"}
+            </p>
           </>
         ) : (
           <>
-            <button onClick={() => { setView("categories"); setSelectedType(null); resetFilters(); }} style={{
-              background: "rgba(255,255,255,0.2)", color: "#fff", border: "1px solid rgba(255,255,255,0.4)",
-              padding: "7px 16px", borderRadius: "8px", cursor: "pointer", fontSize: "13px", marginBottom: "16px"
-            }}>← All Categories</button>
-            <h1 style={{ fontSize: "32px", fontWeight: "300", margin: "0 0 6px" }}>
+            <button className="btn" onClick={() => { setView("categories"); setSelectedType(null); resetFilters(); }}
+              style={{ background: "rgba(255,255,255,0.2)", color: "#fff", border: "1px solid rgba(255,255,255,0.4)", marginBottom: "16px" }}>
+              ← All Categories
+            </button>
+            <h1 style={{ fontSize: "32px", fontWeight: "300", margin: "0 0 6px", color: "#fff" }}>
               {TYPE_META[selectedType]?.emoji} <strong style={{ fontWeight: "800" }}>{TYPE_META[selectedType]?.label}</strong>
             </h1>
-            <p style={{ opacity: 0.8, margin: 0, fontSize: "14px" }}>{totalElements} resource{totalElements !== 1 ? "s" : ""} available</p>
+            <p style={{ opacity: 0.8, margin: 0, fontSize: "14px", color: "#fff" }}>
+              {totalElements} resource{totalElements !== 1 ? "s" : ""} found
+            </p>
           </>
         )}
       </div>
 
       <div style={{ maxWidth: "1400px", margin: "0 auto", padding: "30px 20px" }}>
 
-        {/* Stats Row */}
-        {view === "categories" && stats && (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "14px", marginBottom: "30px" }}>
+        {/* Stats - Admin only */}
+        {view === "categories" && isAdmin && stats && (
+          <div className="stats-grid">
             {[
-              { label: "Total resources", value: stats.totalResources, color: "#0053A0" },
-              { label: "Active", value: stats.activeResources, color: "#1D9E75" },
-              { label: "Out of service", value: stats.outOfService, color: "#E24B4A" },
-              { label: "Maintenance", value: stats.underMaintenance, color: "#BA7517" },
+              { label: "Total resources", value: stats.totalResources, color: "var(--sliit-blue)" },
+              { label: "Active", value: stats.activeResources, color: "var(--success)" },
+              { label: "Out of service", value: stats.outOfService, color: "var(--danger)" },
+              { label: "Maintenance", value: stats.underMaintenance, color: "var(--warning)" },
             ].map(s => (
-              <div key={s.label} style={{ background: "#fff", borderRadius: "10px", padding: "16px 20px", boxShadow: "0 2px 8px rgba(0,0,0,0.06)" }}>
-                <div style={{ fontSize: "12px", color: "#888", marginBottom: "6px" }}>{s.label}</div>
-                <div style={{ fontSize: "28px", fontWeight: "700", color: s.color }}>{s.value}</div>
+              <div key={s.label} className="stat-card">
+                <div className="stat-label">{s.label}</div>
+                <div className="stat-value" style={{ color: s.color }}>{s.value}</div>
               </div>
             ))}
           </div>
@@ -266,28 +258,20 @@ export default function CataloguePage() {
 
         {/* Categories View */}
         {view === "categories" && (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "20px" }}>
+          <div className="card-grid">
             {RESOURCE_TYPES.filter(t => categoryCounts[t] > 0).map(type => {
               const meta = TYPE_META[type];
               return (
-                <div key={type} onClick={() => handleCategoryClick(type)} style={{
-                  background: "#fff", borderRadius: "12px", overflow: "hidden",
-                  border: "1px solid #e0e0e0", cursor: "pointer",
-                  transition: "transform 0.2s, box-shadow 0.2s",
-                  boxShadow: "0 2px 8px rgba(0,0,0,0.06)"
-                }}
-                  onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-6px)"; e.currentTarget.style.boxShadow = "0 12px 25px rgba(0,0,0,0.12)"; }}
-                  onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.06)"; }}>
+                <div key={type} className="card" onClick={() => handleCategoryClick(type)}
+                  style={{ cursor: "pointer", overflow: "hidden" }}>
                   <div style={{ height: "160px", overflow: "hidden" }}>
                     <img src={meta.img} alt={meta.label} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                   </div>
                   <div style={{ padding: "18px 20px" }}>
-                    <div style={{ fontSize: "11px", color: "#F39200", fontWeight: "700", textTransform: "uppercase", marginBottom: "4px" }}>Category</div>
-                    <div style={{ fontSize: "18px", fontWeight: "700", color: "#003366", marginBottom: "6px" }}>{meta.emoji} {meta.label}</div>
-                    <div style={{ fontSize: "13px", color: "#888" }}>{categoryCounts[type]} resource{categoryCounts[type] !== 1 ? "s" : ""} available</div>
-                    <div style={{ marginTop: "12px", height: "4px", background: "#eee", borderRadius: "4px" }}>
-                      <div style={{ height: "100%", background: "#0053A0", borderRadius: "4px", width: `${Math.min(100, (categoryCounts[type] / 5) * 100)}%` }} />
-                    </div>
+                    <div style={{ fontSize: "11px", color: "var(--sliit-orange)", fontWeight: "700", textTransform: "uppercase", marginBottom: "4px" }}>Category</div>
+                    <div style={{ fontSize: "18px", fontWeight: "700", color: "var(--sliit-dark)", marginBottom: "6px" }}>{meta.emoji} {meta.label}</div>
+                    <div style={{ fontSize: "13px", color: "var(--text-light)" }}>{categoryCounts[type]} resource{categoryCounts[type] !== 1 ? "s" : ""} available</div>
+                    <div className="occ-bar"><div className="occ-fill" style={{ width: `${Math.min(100, (categoryCounts[type] / 5) * 100)}%` }} /></div>
                   </div>
                 </div>
               );
@@ -298,46 +282,30 @@ export default function CataloguePage() {
         {/* Resources View */}
         {view === "resources" && (
           <>
-            {/* Filters */}
-            <div style={{
-              background: "#fff", borderRadius: "10px", padding: "14px 16px",
-              marginBottom: "20px", display: "flex", gap: "10px", flexWrap: "wrap",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.06)"
-            }}>
+            <div className="filters-bar">
               <input placeholder="Search by name..." value={filters.search}
                 onChange={(e) => setFilters({ search: e.target.value })}
-                style={{ flex: 1, minWidth: "160px", padding: "7px 10px", borderRadius: "8px", border: "1px solid #ddd", fontSize: "13px" }} />
-              <select value={filters.status} onChange={(e) => setFilters({ status: e.target.value })}
-                style={{ padding: "7px 10px", borderRadius: "8px", border: "1px solid #ddd", fontSize: "13px" }}>
+                className="form-input" style={{ flex: 1, minWidth: "160px" }} />
+              <select value={filters.status} onChange={(e) => setFilters({ status: e.target.value })} className="form-input" style={{ width: "auto" }}>
                 <option value="">All statuses</option>
                 {STATUSES.map(s => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
               </select>
               <input placeholder="Min capacity" type="number" value={filters.minCapacity || ""}
                 onChange={(e) => setFilters({ minCapacity: e.target.value })}
-                style={{ padding: "7px 10px", borderRadius: "8px", border: "1px solid #ddd", fontSize: "13px", width: "120px" }} />
-              <button onClick={resetFilters} style={{
-                padding: "7px 14px", borderRadius: "8px", border: "1px solid #ddd",
-                background: "transparent", cursor: "pointer", fontSize: "13px"
-              }}>Reset</button>
+                className="form-input" style={{ width: "130px" }} />
+              <button className="btn btn-secondary" onClick={resetFilters}>Reset</button>
             </div>
 
             {loading ? (
-              <div style={{ textAlign: "center", padding: "60px", color: "#888" }}>Loading...</div>
+              <div style={{ textAlign: "center", padding: "60px", color: "var(--text-light)" }}>Loading...</div>
             ) : resources.length === 0 ? (
-              <div style={{ textAlign: "center", padding: "60px", color: "#888" }}>No resources found.</div>
+              <div style={{ textAlign: "center", padding: "60px", color: "var(--text-light)" }}>No resources found.</div>
             ) : (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: "20px" }}>
+              <div className="card-grid">
                 {resources.map(r => (
-                  <div key={r.id} onClick={() => navigate(`/resources/${r.id}`)} style={{
-                    background: "#fff", borderRadius: "12px", overflow: "hidden",
-                    border: "1px solid #e0e0e0", cursor: "pointer",
-                    boxShadow: "0 2px 8px rgba(0,0,0,0.06)", display: "flex", flexDirection: "column",
-                    transition: "transform 0.2s, box-shadow 0.2s"
-                  }}
-                    onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-6px)"; e.currentTarget.style.boxShadow = "0 12px 25px rgba(0,0,0,0.12)"; }}
-                    onMouseLeave={e => { e.currentTarget.style.transform = "none"; e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.06)"; }}>
+                  <div key={r.id} className="card" onClick={() => navigate(`/resources/${r.id}`)}
+                    style={{ cursor: "pointer", overflow: "hidden", display: "flex", flexDirection: "column" }}>
 
-                    {/* Card Image */}
                     <div style={{ height: "160px", overflow: "hidden", position: "relative" }}>
                       <img
                         src={r.imageUrl ? `http://localhost:8081${r.imageUrl}` : TYPE_META[r.type]?.img}
@@ -347,41 +315,58 @@ export default function CataloguePage() {
                       <div style={{
                         position: "absolute", top: "10px", right: "10px",
                         background: "rgba(0,0,0,0.55)", color: "#fff",
-                        padding: "3px 10px", borderRadius: "20px", fontSize: "11px", fontWeight: "700",
-                        backdropFilter: "blur(4px)"
+                        padding: "3px 10px", borderRadius: "20px", fontSize: "11px", fontWeight: "700"
                       }}>{r.status.replace(/_/g, " ")}</div>
                     </div>
 
                     <div style={{ padding: "16px 18px", flex: 1 }}>
-                      <div style={{ fontSize: "11px", color: "#F39200", fontWeight: "700", textTransform: "uppercase", marginBottom: "4px" }}>
+                      <div style={{ fontSize: "11px", color: "var(--sliit-orange)", fontWeight: "700", textTransform: "uppercase", marginBottom: "4px" }}>
                         {TYPE_META[r.type]?.label}
                       </div>
-                      <div style={{ fontSize: "16px", fontWeight: "700", color: "#003366", marginBottom: "6px" }}>{r.name}</div>
-                      <div style={{ fontSize: "12px", color: "#888", marginBottom: "10px" }}>📍 {r.location}</div>
+                      <div style={{ fontSize: "16px", fontWeight: "700", color: "var(--sliit-dark)", marginBottom: "6px" }}>{r.name}</div>
+                      <div style={{ fontSize: "12px", color: "var(--text-light)", marginBottom: "8px" }}>📍 {r.location}</div>
 
                       {r.capacity && (
                         <>
-                          <div style={{ height: "4px", background: "#eee", borderRadius: "4px", marginBottom: "4px" }}>
-                            <div style={{ height: "100%", background: statusColor[r.status], borderRadius: "4px", width: "40%" }} />
-                          </div>
+                          <div className="occ-bar"><div className="occ-fill" style={{ width: "40%", background: statusColor[r.status] }} /></div>
                           <div style={{ fontSize: "11px", color: "#999" }}>Capacity: {r.capacity}</div>
                         </>
                       )}
 
-                      <div style={{ display: "flex", gap: "6px", marginTop: "12px" }}>
-                        <button onClick={(e) => openEditModal(r, e)} style={{
-                          flex: 1, fontSize: "12px", padding: "6px", borderRadius: "6px",
-                          border: "1px solid #ddd", background: "transparent", cursor: "pointer"
-                        }}>Edit</button>
-                        <select onClick={e => e.stopPropagation()} onChange={(e) => handleStatusChange(r.id, e.target.value, e)} value={r.status}
-                          style={{ flex: 1, fontSize: "11px", padding: "5px", borderRadius: "6px", border: "1px solid #ddd" }}>
-                          {STATUSES.map(s => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
-                        </select>
-                        <button onClick={(e) => handleDelete(r.id, e)} style={{
-                          fontSize: "12px", padding: "6px 10px", borderRadius: "6px",
-                          border: "1px solid #ffcdd2", background: "transparent", color: "#e53935", cursor: "pointer"
-                        }}>Del</button>
+                      <div style={{ marginTop: "8px", display: "flex", gap: "6px", flexWrap: "wrap" }}>
+                        <span style={{ fontSize: "11px", padding: "2px 8px", borderRadius: "10px", background: "#E6F1FB", color: "#185FA5", fontWeight: "600" }}>
+                          {r.bookingTier}
+                        </span>
+                        <span style={{ fontSize: "11px", padding: "2px 8px", borderRadius: "10px", background: "#f0f2f5", color: "#888" }}>
+                          Max {r.maxBookingHours}h
+                        </span>
                       </div>
+
+                      {/* Admin only actions */}
+                      {isAdmin && (
+                        <div style={{ display: "flex", gap: "6px", marginTop: "12px" }}>
+                          <button onClick={(e) => openEditModal(r, e)} className="btn btn-secondary" style={{ flex: 1, fontSize: "12px", padding: "5px" }}>Edit</button>
+                          <select onClick={e => e.stopPropagation()} onChange={(e) => handleStatusChange(r.id, e.target.value, e)} value={r.status}
+                            className="form-input" style={{ flex: 1, fontSize: "11px", padding: "5px" }}>
+                            {STATUSES.map(s => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
+                          </select>
+                          <button onClick={(e) => handleDelete(r.id, e)} className="btn btn-danger" style={{ fontSize: "12px", padding: "5px 8px" }}>Del</button>
+                        </div>
+                      )}
+
+                      {/* Student view - Book button */}
+                      {!isAdmin && r.status === "ACTIVE" && (
+                        <button onClick={(e) => { e.stopPropagation(); navigate(`/resources/${r.id}`); }}
+                          className="btn btn-primary" style={{ width: "100%", marginTop: "12px" }}>
+                          View & Book
+                        </button>
+                      )}
+
+                      {!isAdmin && r.status !== "ACTIVE" && (
+                        <div style={{ marginTop: "12px", padding: "6px", borderRadius: "6px", background: "#fff3f3", color: "var(--danger)", fontSize: "12px", textAlign: "center" }}>
+                          Not available for booking
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -391,24 +376,15 @@ export default function CataloguePage() {
         )}
       </div>
 
-      {/* Footer */}
-      <footer style={{ background: "#222", color: "#fff", padding: "30px 10%", textAlign: "center", fontSize: "13px", marginTop: "40px" }}>
+      <footer className="app-footer">
         © 2026 Smart Campus Operations Hub
       </footer>
 
-      {/* Modal */}
-      {showModal && (
-        <div style={{
-          position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)",
-          display: "flex", alignItems: "center", justifyContent: "center", zIndex: 200
-        }}>
-          <div style={{
-            background: "#fff", borderRadius: "12px", padding: "24px",
-            width: "500px", maxWidth: "95vw", maxHeight: "90vh", overflowY: "auto"
-          }}>
-            <h2 style={{ fontSize: "17px", fontWeight: "600", marginBottom: "20px" }}>
-              {editingResource ? "Edit Resource" : "Add New Resource"}
-            </h2>
+      {/* Modal - Admin only */}
+      {showModal && isAdmin && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <div className="modal-title">{editingResource ? "Edit Resource" : "Add New Resource"}</div>
             {[
               { label: "Name *", key: "name", type: "text" },
               { label: "Location *", key: "location", type: "text" },
@@ -420,10 +396,9 @@ export default function CataloguePage() {
               { label: "Max Advance Days", key: "maxAdvanceDays", type: "number" },
               { label: "Description", key: "description", type: "text" },
             ].map(({ label, key, type }) => (
-              <div key={key} style={{ marginBottom: "12px" }}>
-                <label style={{ fontSize: "12px", color: "#888", display: "block", marginBottom: "4px" }}>{label}</label>
-                <input type={type} value={form[key]} onChange={(e) => setForm({ ...form, [key]: e.target.value })}
-                  style={{ width: "100%", padding: "8px 10px", borderRadius: "8px", border: "1px solid #ddd", fontSize: "13px" }} />
+              <div key={key} className="form-field">
+                <label className="form-label">{label}</label>
+                <input type={type} value={form[key]} onChange={(e) => setForm({ ...form, [key]: e.target.value })} className="form-input" />
               </div>
             ))}
             {[
@@ -431,23 +406,16 @@ export default function CataloguePage() {
               { label: "Status", key: "status", options: STATUSES.map(s => ({ value: s, label: s.replace(/_/g, " ") })) },
               { label: "Booking Tier", key: "bookingTier", options: TIERS.map(t => ({ value: t, label: t })) },
             ].map(({ label, key, options }) => (
-              <div key={key} style={{ marginBottom: "12px" }}>
-                <label style={{ fontSize: "12px", color: "#888", display: "block", marginBottom: "4px" }}>{label}</label>
-                <select value={form[key]} onChange={(e) => setForm({ ...form, [key]: e.target.value })}
-                  style={{ width: "100%", padding: "8px 10px", borderRadius: "8px", border: "1px solid #ddd", fontSize: "13px" }}>
+              <div key={key} className="form-field">
+                <label className="form-label">{label}</label>
+                <select value={form[key]} onChange={(e) => setForm({ ...form, [key]: e.target.value })} className="form-input">
                   {options.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </select>
               </div>
             ))}
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "20px" }}>
-              <button onClick={() => setShowModal(false)} style={{
-                padding: "8px 16px", borderRadius: "8px", border: "1px solid #ddd",
-                background: "transparent", cursor: "pointer", fontSize: "13px"
-              }}>Cancel</button>
-              <button onClick={handleSubmit} style={{
-                padding: "8px 20px", borderRadius: "8px", border: "none",
-                background: "#0053A0", color: "#fff", cursor: "pointer", fontSize: "13px", fontWeight: "600"
-              }}>Save Resource</button>
+            <div className="modal-actions">
+              <button className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
+              <button className="btn btn-primary" onClick={handleSubmit}>Save Resource</button>
             </div>
           </div>
         </div>
