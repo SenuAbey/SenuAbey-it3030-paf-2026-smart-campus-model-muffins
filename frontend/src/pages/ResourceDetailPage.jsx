@@ -162,6 +162,23 @@ export default function ResourceDetailPage() {
         ))}
       </div>
 
+      {/* Book This Resource Button */}
+      {resource.status === "ACTIVE" && (
+        <div style={{ marginBottom: "16px" }}>
+          <button
+            onClick={() => navigate(`/bookings?resourceId=${resource.id}`)}
+            style={{
+              width: "100%", padding: "12px", borderRadius: "10px",
+              background: "#111", color: "#fff", border: "none",
+              cursor: "pointer", fontSize: "15px", fontWeight: "600",
+              display: "flex", alignItems: "center", justifyContent: "center", gap: "8px"
+            }}
+          >
+            📅 Book This Resource
+          </button>
+        </div>
+      )}
+
       {/* Actions */}
       <div style={{
         background: "#fff", border: "1px solid #eee", borderRadius: "12px", padding: "20px"

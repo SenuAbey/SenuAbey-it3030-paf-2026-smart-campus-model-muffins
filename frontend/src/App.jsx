@@ -7,6 +7,8 @@ import LoginPage from './pages/LoginPage';
 import AuthCallback from './pages/AuthCallback';
 import { useAuthStore } from './store/authStore';
 import { getMe } from './api/authApi';
+import BookingsPage from "./pages/bookings/BookingsPage";
+import AdminBookingsPage from "./pages/bookings/AdminBookingsPage";
 import './global.css';
 
 export const RoleContext = React.createContext('USER');
@@ -64,6 +66,12 @@ function App() {
           } />
           <Route path="/resource-groups" element={
             <ProtectedRoute><ResourceGroupPage /></ProtectedRoute>
+          } />
+          <Route path="/bookings" element={
+            <ProtectedRoute><BookingsPage /></ProtectedRoute>
+          } />
+          <Route path="/admin/bookings" element={
+            <ProtectedRoute><AdminBookingsPage /></ProtectedRoute>
           } />
         </Routes>
       </BrowserRouter>
