@@ -95,7 +95,7 @@ function BookingCard({ booking, onCancel }) {
 export default function BookingsPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { role } = useContext(RoleContext);
+  const { role, setRole } = useContext(RoleContext);
   const preselectedId = searchParams.get("resourceId") || "";
 
   const [resources, setResources] = useState([]);
@@ -103,7 +103,7 @@ export default function BookingsPage() {
   const [filterStatus, setFilterStatus] = useState("");
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [activeTab, setActiveTab] = useState(preselectedId ? "new" : "new");
+  const [activeTab, setActiveTab] = useState("new");
 
   const [form, setForm] = useState({
     resourceId: preselectedId, bookedBy: "", startTime: "", endTime: "", purpose: "", attendees: 1,
@@ -115,10 +115,10 @@ export default function BookingsPage() {
   }, []);
 
   const fetchMyBookings = async () => {
+    if (!form.bookedBy) return;
     setLoading(true);
     try {
-      const email = form.bookedBy || "user@test.com";
-      const res = await axios.get(`${API}/bookings/my?email=${email}`);
+      const res = await axios.get(`${API}/bookings/my?email=${form.bookedBy}`);
       setBookings(res.data);
     } catch { } finally { setLoading(false); }
   };
@@ -132,8 +132,8 @@ export default function BookingsPage() {
     setSubmitting(true);
     try {
       await axios.post(`${API}/bookings`, { ...form, attendees: parseInt(form.attendees) || 1 });
-      toast.success("Booking request submitted! Awaiting approval.");
-      setForm({ ...form, startTime: "", endTime: "", purpose: "", attendees: 1 });
+      toast.success("Booking request submitted! Awaiting admin approval.");
+      setForm(f => ({ ...f, startTime: "", endTime: "", purpose: "", attendees: 1 }));
       setActiveTab("mine");
       fetchMyBookings();
     } catch (err) {
@@ -158,16 +158,27 @@ export default function BookingsPage() {
     <div style={{ minHeight: "100vh", background: "var(--bg)", fontFamily: "inherit" }}>
       <Toaster position="top-right" />
 
+      {/* Header — same pattern as Member 1's CataloguePage */}
       <header className="app-header">
         <div className="app-logo" onClick={() => navigate("/")}>UNI <span>Campus Hub</span></div>
         <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+          {/* Role Toggle — Member 1's original pattern */}
+          <div className="role-toggle">
+            <button className={`role-btn ${role === "STUDENT" ? "active" : ""}`} onClick={() => setRole("STUDENT")}>
+              👤 Student
+            </button>
+            <button className={`role-btn ${role === "ADMIN" ? "active" : ""}`} onClick={() => {
+              setRole("ADMIN");
+              navigate("/admin/bookings");
+            }}>
+              ⚙️ Admin
+            </button>
+          </div>
           <button className="btn btn-secondary" onClick={() => navigate("/")}>← Catalogue</button>
-          {role === "ADMIN" && (
-            <button className="btn btn-primary" onClick={() => navigate("/admin/bookings")}>⚙️ Admin Panel</button>
-          )}
         </div>
       </header>
 
+      {/* Banner */}
       <div className="app-banner" style={{
         backgroundImage: "linear-gradient(rgba(0,51,102,0.88), rgba(0,83,160,0.88)), url('https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=1200&q=80')"
       }}>
@@ -177,9 +188,9 @@ export default function BookingsPage() {
             padding: "6px 14px", borderRadius: "8px", cursor: "pointer", fontSize: "12px", marginBottom: "14px", display: "inline-block"
           }}>← Back to Resource</button>
         )}
-        <div style={{ fontSize: "12px", opacity: 0.7, marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.1em" }}>Module B — Booking Management</div>
+        <div style={{ fontSize: "12px", opacity: 0.7, marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.1em" }}>My Bookings</div>
         <h1 style={{ fontSize: "36px", fontWeight: "300", margin: "0 0 8px", color: "#fff" }}>Resource <strong style={{ fontWeight: "800" }}>Bookings</strong></h1>
-        <p style={{ opacity: 0.8, margin: 0, fontSize: "15px", color: "#fff" }}>Request, track and manage your campus resource bookings</p>
+        <p style={{ opacity: 0.8, margin: 0, fontSize: "15px", color: "#fff" }}>Request and track your campus resource bookings</p>
       </div>
 
       <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "30px 20px" }}>
@@ -191,6 +202,7 @@ export default function BookingsPage() {
               background: "#fff", borderRadius: "10px", padding: "16px 20px",
               boxShadow: "0 2px 8px rgba(0,0,0,0.05)", borderLeft: `4px solid ${meta.color}`,
               cursor: "pointer", transition: "transform 0.15s",
+              outline: filterStatus === status ? `2px solid ${meta.color}` : "none",
             }}
               onClick={() => { setFilterStatus(filterStatus === status ? "" : status); setActiveTab("mine"); }}
               onMouseEnter={e => e.currentTarget.style.transform = "translateY(-2px)"}
@@ -214,68 +226,83 @@ export default function BookingsPage() {
           ))}
         </div>
 
-        {/* NEW BOOKING FORM */}
+        {/* ── NEW BOOKING FORM ── */}
         {activeTab === "new" && (
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 360px", gap: "24px", alignItems: "start" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 340px", gap: "24px", alignItems: "start" }}>
             <div style={{ background: "#fff", borderRadius: "12px", border: "1px solid #eee", overflow: "hidden", boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
               <div style={{ background: "var(--sliit-blue)", padding: "18px 24px", color: "#fff" }}>
                 <div style={{ fontSize: "16px", fontWeight: "700" }}>New Booking Request</div>
                 <div style={{ fontSize: "12px", opacity: 0.8, marginTop: "3px" }}>Fill in all required fields to submit your booking</div>
               </div>
-              <div style={{ padding: "24px", display: "flex", flexDirection: "column", gap: "18px" }}>
-                {/* Resource */}
+              <div style={{ padding: "24px", display: "flex", flexDirection: "column", gap: "16px" }}>
+
                 <div>
-                  <label style={{ display: "block", fontSize: "12px", fontWeight: "600", color: "#555", marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.05em" }}>Resource *</label>
-                  <select value={form.resourceId} onChange={e => setForm({ ...form, resourceId: e.target.value })}
-                    className="form-input" style={{ fontSize: "14px", padding: "10px 12px" }}>
+                  <label className="form-label">Resource *</label>
+                  <select value={form.resourceId} onChange={e => setForm(f => ({ ...f, resourceId: e.target.value }))} className="form-input">
                     <option value="">— Select a resource —</option>
                     {resources.filter(r => r.status === "ACTIVE").map(r => (
                       <option key={r.id} value={r.id}>{r.name} ({r.type?.replace(/_/g, " ")})</option>
                     ))}
                   </select>
                 </div>
-                {/* Email */}
+
                 <div>
-                  <label style={{ display: "block", fontSize: "12px", fontWeight: "600", color: "#555", marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.05em" }}>Your Email *</label>
+                  <label className="form-label">Your Email *</label>
                   <input type="email" placeholder="you@university.ac.lk" value={form.bookedBy}
-                    onChange={e => setForm({ ...form, bookedBy: e.target.value })}
-                    className="form-input" style={{ fontSize: "14px", padding: "10px 12px" }} />
+                    onChange={e => setForm(f => ({ ...f, bookedBy: e.target.value }))} className="form-input" />
                 </div>
-                {/* Date/time */}
+
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
                   <div>
-                    <label style={{ display: "block", fontSize: "12px", fontWeight: "600", color: "#555", marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.05em" }}>Start Time *</label>
-                    <input type="datetime-local" value={form.startTime} onChange={e => setForm({ ...form, startTime: e.target.value })}
-                      className="form-input" style={{ fontSize: "13px", padding: "10px 12px" }} />
+                    <label className="form-label">Start Time *</label>
+                    <input type="datetime-local" value={form.startTime}
+                      onChange={e => setForm(f => ({ ...f, startTime: e.target.value }))} className="form-input" />
                   </div>
                   <div>
-                    <label style={{ display: "block", fontSize: "12px", fontWeight: "600", color: "#555", marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.05em" }}>End Time *</label>
-                    <input type="datetime-local" value={form.endTime} onChange={e => setForm({ ...form, endTime: e.target.value })}
-                      className="form-input" style={{ fontSize: "13px", padding: "10px 12px" }} />
+                    <label className="form-label">End Time *</label>
+                    <input type="datetime-local" value={form.endTime}
+                      onChange={e => setForm(f => ({ ...f, endTime: e.target.value }))} className="form-input" />
                   </div>
                 </div>
-                {/* Purpose */}
+
+                {/* Duration preview */}
+                {form.startTime && form.endTime && new Date(form.endTime) > new Date(form.startTime) && (() => {
+                  const ms = new Date(form.endTime) - new Date(form.startTime);
+                  const h = Math.floor(ms / 3600000);
+                  const m = Math.floor((ms % 3600000) / 60000);
+                  return (
+                    <div style={{ background: "#E8F8F3", border: "1px solid #b2dfdb", borderRadius: "8px", padding: "8px 12px", fontSize: "12px", color: "#1D9E75" }}>
+                      ✅ Duration: <strong>{h}h{m > 0 ? ` ${m}m` : ""}</strong>
+                      {selectedResource && h > selectedResource.maxBookingHours && (
+                        <span style={{ color: "#E24B4A", marginLeft: "8px" }}>⚠️ Exceeds max {selectedResource.maxBookingHours}h</span>
+                      )}
+                    </div>
+                  );
+                })()}
+
                 <div>
-                  <label style={{ display: "block", fontSize: "12px", fontWeight: "600", color: "#555", marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.05em" }}>Purpose *</label>
+                  <label className="form-label">Purpose *</label>
                   <input placeholder="e.g. IT3030 Group Meeting, Lab Session" value={form.purpose}
-                    onChange={e => setForm({ ...form, purpose: e.target.value })}
-                    className="form-input" style={{ fontSize: "14px", padding: "10px 12px" }} />
+                    onChange={e => setForm(f => ({ ...f, purpose: e.target.value }))} className="form-input" />
                 </div>
-                {/* Attendees */}
+
                 <div>
-                  <label style={{ display: "block", fontSize: "12px", fontWeight: "600", color: "#555", marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.05em" }}>Expected Attendees</label>
+                  <label className="form-label">Expected Attendees</label>
                   <input type="number" min="1" max={selectedResource?.capacity || 999} value={form.attendees}
-                    onChange={e => setForm({ ...form, attendees: e.target.value })}
-                    className="form-input" style={{ fontSize: "14px", padding: "10px 12px" }} />
+                    onChange={e => setForm(f => ({ ...f, attendees: e.target.value }))} className="form-input" />
                   {selectedResource?.capacity && (
                     <div style={{ fontSize: "11px", color: "#aaa", marginTop: "4px" }}>Max capacity: {selectedResource.capacity}</div>
                   )}
                 </div>
+
                 <button onClick={handleSubmit} disabled={submitting} style={{
                   padding: "13px", borderRadius: "10px", border: "none",
                   background: submitting ? "#ccc" : "var(--sliit-blue)", color: "#fff",
-                  cursor: submitting ? "not-allowed" : "pointer", fontSize: "14px", fontWeight: "700", marginTop: "4px"
+                  cursor: submitting ? "not-allowed" : "pointer", fontSize: "14px", fontWeight: "700"
                 }}>{submitting ? "Submitting..." : "Submit Booking Request →"}</button>
+                <div style={{ fontSize: "11px", color: "#aaa", textAlign: "center" }}>
+                  Your request will be reviewed by an admin before confirmation
+                </div>
               </div>
             </div>
 
@@ -316,20 +343,19 @@ export default function BookingsPage() {
                 </div>
               )}
 
+              {/* Workflow info */}
               <div style={{ background: "#fff", borderRadius: "12px", border: "1px solid #eee", padding: "18px 20px", boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
                 <div style={{ fontSize: "12px", fontWeight: "700", color: "#555", marginBottom: "14px", textTransform: "uppercase", letterSpacing: "0.05em" }}>Booking Workflow</div>
                 {[
-                  { icon: "⏳", label: "PENDING", desc: "Awaiting admin review", color: "#BA7517" },
-                  { icon: "✅", label: "APPROVED", desc: "Booking confirmed", color: "#1D9E75" },
-                  { icon: "❌", label: "REJECTED", desc: "Not approved (with reason)", color: "#E24B4A" },
-                  { icon: "🚫", label: "CANCELLED", desc: "You cancelled this booking", color: "#888" },
+                  { icon: "📝", label: "Submit request", color: "#0053A0" },
+                  { icon: "⏳", label: "PENDING — admin reviews", color: "#BA7517" },
+                  { icon: "✅", label: "APPROVED — confirmed", color: "#1D9E75" },
+                  { icon: "❌", label: "REJECTED — reason given", color: "#E24B4A" },
+                  { icon: "🚫", label: "You can CANCEL approved bookings", color: "#888" },
                 ].map((step, i) => (
-                  <div key={step.label} style={{ display: "flex", gap: "12px", alignItems: "center", marginBottom: i < 3 ? "10px" : 0 }}>
-                    <span style={{ fontSize: "18px" }}>{step.icon}</span>
-                    <div>
-                      <div style={{ fontSize: "12px", fontWeight: "700", color: step.color }}>{step.label}</div>
-                      <div style={{ fontSize: "11px", color: "#aaa" }}>{step.desc}</div>
-                    </div>
+                  <div key={i} style={{ display: "flex", gap: "10px", alignItems: "flex-start", marginBottom: i < 4 ? "10px" : 0 }}>
+                    <span style={{ fontSize: "16px" }}>{step.icon}</span>
+                    <div style={{ fontSize: "12px", color: step.color, fontWeight: "500" }}>{step.label}</div>
                   </div>
                 ))}
               </div>
@@ -337,9 +363,33 @@ export default function BookingsPage() {
           </div>
         )}
 
-        {/* MY BOOKINGS */}
+        {/* ── MY BOOKINGS ── */}
         {activeTab === "mine" && (
           <div>
+            {/* Email lookup row */}
+            <div style={{
+              background: "#fff", border: "1px solid #eee", borderRadius: "10px",
+              padding: "14px 18px", marginBottom: "20px",
+              display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap"
+            }}>
+              <span style={{ fontSize: "13px", color: "#555", fontWeight: "600", whiteSpace: "nowrap" }}>Your Email:</span>
+              <input
+                type="email"
+                placeholder="Enter your email to view bookings"
+                value={form.bookedBy}
+                onChange={e => setForm(f => ({ ...f, bookedBy: e.target.value }))}
+                onKeyDown={e => e.key === "Enter" && fetchMyBookings()}
+                className="form-input"
+                style={{ flex: 1, minWidth: "220px", padding: "8px 12px", fontSize: "13px" }}
+              />
+              <button onClick={fetchMyBookings} style={{
+                padding: "8px 20px", borderRadius: "8px", border: "none",
+                background: "var(--sliit-blue, #0053A0)", color: "#fff",
+                cursor: "pointer", fontSize: "13px", fontWeight: "600", whiteSpace: "nowrap"
+              }}>Search</button>
+            </div>
+
+            {/* Status filter pills */}
             <div style={{ display: "flex", gap: "8px", marginBottom: "20px", flexWrap: "wrap", alignItems: "center" }}>
               <span style={{ fontSize: "13px", color: "#888", marginRight: "4px" }}>Filter:</span>
               <button onClick={() => setFilterStatus("")} style={{
@@ -364,7 +414,7 @@ export default function BookingsPage() {
             </div>
 
             {loading ? (
-              <div style={{ textAlign: "center", padding: "60px", color: "#aaa" }}>Loading bookings...</div>
+              <div style={{ textAlign: "center", padding: "60px", color: "#aaa" }}>Loading your bookings...</div>
             ) : filtered.length === 0 ? (
               <div style={{ textAlign: "center", padding: "60px 20px", background: "#fff", borderRadius: "12px", border: "1px dashed #ddd", color: "#aaa" }}>
                 <div style={{ fontSize: "40px", marginBottom: "12px" }}>📋</div>
@@ -384,9 +434,7 @@ export default function BookingsPage() {
         )}
       </div>
 
-      <footer style={{ background: "#fff", borderTop: "4px solid var(--sliit-orange)", padding: "20px", textAlign: "center", fontSize: "12px", color: "#aaa", marginTop: "40px" }}>
-        © 2026 Smart Campus Operations Hub — Booking Management
-      </footer>
+      <footer className="app-footer">© 2026 Smart Campus Operations Hub</footer>
     </div>
   );
 }
