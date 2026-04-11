@@ -9,6 +9,10 @@ import { useAuthStore } from './store/authStore';
 import { getMe } from './api/authApi';
 import BookingsPage from "./pages/bookings/BookingsPage";
 import AdminBookingsPage from "./pages/bookings/AdminBookingsPage";
+import TicketsPage from './pages/TicketsPage';
+import TicketDetailPage from './pages/TicketDetailPage';
+import CreateTicketPage from './pages/CreateTicketPage';
+import TicketStatsPage from './pages/TicketStatsPage';
 import './global.css';
 
 export const RoleContext = React.createContext('USER');
@@ -72,6 +76,18 @@ function App() {
           } />
           <Route path="/admin/bookings" element={
             <ProtectedRoute><AdminBookingsPage /></ProtectedRoute>
+          } />
+          <Route path="/tickets" element={
+            <ProtectedRoute><TicketsPage /></ProtectedRoute>
+          } />
+          <Route path="/tickets/stats" element={
+            <ProtectedRoute><TicketStatsPage /></ProtectedRoute>
+          } />
+          <Route path="/tickets/new" element={
+            <ProtectedRoute><CreateTicketPage /></ProtectedRoute>
+          } />
+          <Route path="/tickets/:id" element={
+            <ProtectedRoute><TicketDetailPage /></ProtectedRoute>
           } />
         </Routes>
       </BrowserRouter>
