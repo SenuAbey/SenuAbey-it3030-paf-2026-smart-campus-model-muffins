@@ -187,7 +187,7 @@ export default function CataloguePage() {
           UNI <span>Campus Hub</span>
         </div>
         <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-          {/* Role Toggle */}
+          {/* Role Toggle — Member 1's original logic */}
           <div className="role-toggle">
             <button className={`role-btn ${role === "STUDENT" ? "active" : ""}`} onClick={() => setRole("STUDENT")}>
               👤 Student
@@ -196,11 +196,25 @@ export default function CataloguePage() {
               ⚙️ Admin
             </button>
           </div>
+
+          {/* Admin-only nav buttons */}
           {isAdmin && (
             <>
-              <button className="btn btn-secondary" onClick={() => navigate("/resource-groups")}>Manage Groups</button>
+              <button className="btn btn-secondary" onClick={() => navigate("/admin/bookings")}>
+                📋 Manage Bookings
+              </button>
+              <button className="btn btn-secondary" onClick={() => navigate("/resource-groups")}>
+                Manage Groups
+              </button>
               <button className="btn btn-primary" onClick={openAddModal}>+ Add Resource</button>
             </>
+          )}
+
+          {/* Student-only nav button */}
+          {!isAdmin && (
+            <button className="btn btn-secondary" onClick={() => navigate("/bookings")}>
+              📅 My Bookings
+            </button>
           )}
         </div>
       </header>
@@ -354,7 +368,7 @@ export default function CataloguePage() {
                         </div>
                       )}
 
-                      {/* Student view - Book button */}
+                      {/* Student view - View & Book goes to resource detail page */}
                       {!isAdmin && r.status === "ACTIVE" && (
                         <button onClick={(e) => { e.stopPropagation(); navigate(`/resources/${r.id}`); }}
                           className="btn btn-primary" style={{ width: "100%", marginTop: "12px" }}>
