@@ -177,7 +177,8 @@ export default function TicketDetailPage() {
   const [uploadingFile, setUploadingFile] = useState(false);
 
   // Current user — will come from Auth (Module E) later
-  const currentUser = 'admin'; // TODO: replace with auth context
+  const currentUser = "admin"; // TODO: replace with auth context
+  const [role, setRole] = useState("USER"); // USER or ADMIN — replace with auth when Module E is done
 
   const loadTicket = useCallback(async () => {
     setLoading(true);
@@ -707,8 +708,22 @@ export default function TicketDetailPage() {
 
           {/* ── Right Column: Actions ─────────────────────────────── */}
           <div>
-            {/* Status Actions */}
-            {availableActions.length > 0 && (
+            {/* Role toggle for demo — remove when Module E auth is integrated */}
+            <div className="detail-card" style={{ marginBottom: '1rem' }}>
+              <div className="detail-card-body" style={{ padding: '12px 16px' }}>
+                <div style={{ fontSize: '11px', color: 'var(--text-light)', marginBottom: 6, fontWeight: 600, textTransform: 'uppercase' }}>View As</div>
+                <div className="role-toggle">
+                  <button className={`role-btn ${role === 'USER' ? 'active' : ''}`} onClick={() => setRole('USER')}>👤 User</button>
+                  <button className={`role-btn ${role === 'ADMIN' ? 'active' : ''}`} onClick={() => setRole('ADMIN')}>🛡 Admin</button>
+                </div>
+                <div style={{ fontSize: '11px', color: 'var(--text-light)', marginTop: 6 }}>
+                  {role === 'ADMIN' ? 'Admin can change status, assign technicians' : 'User can view and add comments only'}
+                </div>
+              </div>
+            </div>
+
+            {/* Status Actions — ADMIN ONLY */}
+            {role === 'ADMIN' && availableActions.length > 0 && (
               <div className="detail-card" style={{ marginBottom: '1.25rem' }}>
                 <div className="detail-card-header">⚡ Actions</div>
                 <div className="detail-card-body">
@@ -728,8 +743,8 @@ export default function TicketDetailPage() {
               </div>
             )}
 
-            {/* Assign Technician */}
-            {!['CLOSED', 'REJECTED', 'RESOLVED'].includes(ticket.status) && (
+            {/* Assign Technician — ADMIN ONLY */}
+            {role === 'ADMIN' && !['CLOSED', 'REJECTED', 'RESOLVED'].includes(ticket.status) && (
               <div className="detail-card" style={{ marginBottom: '1.25rem' }}>
                 <div className="detail-card-header">👷 Assign Technician</div>
                 <div className="detail-card-body">
