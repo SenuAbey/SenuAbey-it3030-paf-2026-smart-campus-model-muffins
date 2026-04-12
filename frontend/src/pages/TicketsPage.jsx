@@ -3,37 +3,24 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { fetchTickets, fetchTicketStats } from '../api/ticketApi';
 import './tickets.css';
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-const formatDate = (dateStr) => {
-  if (!dateStr) return '—';
-  return new Date(dateStr).toLocaleDateString('en-GB', {
-    day: 'numeric', month: 'short', year: 'numeric',
-  });
-};
-
 const timeAgo = (dateStr) => {
   if (!dateStr) return '';
   const diff = Date.now() - new Date(dateStr).getTime();
   const mins = Math.floor(diff / 60000);
+  if (mins < 1)  return 'just now';
   if (mins < 60) return `${mins}m ago`;
   const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
+  if (hrs < 24)  return `${hrs}h ago`;
   return `${Math.floor(hrs / 24)}d ago`;
 };
 
-const categoryLabel = (cat) =>
-  cat ? cat.replace(/_/g, ' ') : '—';
-
-// ─── Sub-components ───────────────────────────────────────────────────────────
+const categoryLabel = (cat) => cat ? cat.replace(/_/g, ' ') : '—';
 
 function StatusBadge({ status }) {
-  const icons = {
-    OPEN: '🔵', IN_PROGRESS: '🟡', RESOLVED: '🟢', CLOSED: '⚫', REJECTED: '🔴',
-  };
+  const icons = { OPEN: '🔵', IN_PROGRESS: '🟡', RESOLVED: '🟢', CLOSED: '⚫', REJECTED: '🔴' };
   return (
     <span className={`badge badge-status-${status}`}>
-      {icons[status] || ''} {status?.replace('_', ' ')}
+      {icons[status]} {status?.replace('_', ' ')}
     </span>
   );
 }
@@ -49,41 +36,23 @@ function PriorityBadge({ priority }) {
 
 function TicketCard({ ticket, onClick }) {
   return (
-    <div
-      className={`ticket-card status-${ticket.status}`}
-      onClick={() => onClick(ticket.id)}
-    >
-      <div className="ticket-card-header">
+    <div className={`ticket-card status-${ticket.status}`} onClick={() => onClick(ticket.id)}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
         <span className="ticket-id">#{ticket.id}</span>
-        {ticket.escalated && (
-          <span className="escalated-badge">⚡ ESCALATED</span>
-        )}
+        {ticket.escalated && <span className="escalated-badge">⚡ ESCALATED</span>}
       </div>
-
       <h3 className="ticket-title">{ticket.title}</h3>
       <p className="ticket-desc">{ticket.description}</p>
-
       <div className="ticket-meta">
         <StatusBadge status={ticket.status} />
         <PriorityBadge priority={ticket.priority} />
         <span className="badge badge-category">{categoryLabel(ticket.category)}</span>
       </div>
-
       <div className="ticket-footer">
-        <span>
-          {ticket.resourceName
-            ? `📍 ${ticket.resourceName}`
-            : ticket.location
-            ? `📍 ${ticket.location}`
-            : '📍 No resource'}
-        </span>
-        <span style={{ display: 'flex', gap: '0.75rem' }}>
-          {ticket.commentCount > 0 && (
-            <span>💬 {ticket.commentCount}</span>
-          )}
-          {ticket.attachmentCount > 0 && (
-            <span>📎 {ticket.attachmentCount}</span>
-          )}
+        <span>📍 {ticket.location || ticket.resourceName || 'No location'}</span>
+        <span style={{ display: 'flex', gap: 8 }}>
+          {ticket.commentCount > 0 && <span>💬 {ticket.commentCount}</span>}
+          {ticket.attachmentCount > 0 && <span>📎 {ticket.attachmentCount}</span>}
           <span>{timeAgo(ticket.createdAt)}</span>
         </span>
       </div>
@@ -91,38 +60,28 @@ function TicketCard({ ticket, onClick }) {
   );
 }
 
-function StatCard({ value, label, className = '' }) {
-  return (
-    <div className={`stat-card ${className}`}>
-      <span className="stat-value">{value}</span>
-      <span className="stat-label">{label}</span>
-    </div>
-  );
-}
-
-// ─── Main Page ────────────────────────────────────────────────────────────────
-
 export default function TicketsPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const [tickets, setTickets] = useState([]);
-  const [stats, setStats] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [totalPages, setTotalPages] = useState(0);
+  // Role — will come from Auth (Module E) when integrated
+  // For now: toggle between USER and ADMIN for demo/viva purposes
+  const [role, setRole] = useState('USER');
+
+  const [tickets, setTickets]           = useState([]);
+  const [stats, setStats]               = useState(null);
+  const [loading, setLoading]           = useState(true);
+  const [error, setError]               = useState('');
+  const [totalPages, setTotalPages]     = useState(0);
   const [totalElements, setTotalElements] = useState(0);
 
-  // Filter state — read from URL params for shareable links
   const [filters, setFilters] = useState({
-    status: searchParams.get('status') || '',
+    status:   searchParams.get('status') || '',
     category: searchParams.get('category') || '',
     priority: searchParams.get('priority') || '',
-    keyword: searchParams.get('keyword') || '',
-    page: parseInt(searchParams.get('page') || '0'),
+    keyword:  searchParams.get('keyword') || '',
+    page: 0,
     size: 12,
-    sortBy: 'createdAt',
-    sortDir: 'desc',
   });
 
   const loadStats = useCallback(async () => {
@@ -130,105 +89,124 @@ export default function TicketsPage() {
       const data = await fetchTicketStats();
       setStats(data);
     } catch (e) {
-      console.error('Failed to load stats:', e);
+      console.warn('Stats load failed:', e.message);
     }
   }, []);
 
   const loadTickets = useCallback(async () => {
     setLoading(true);
-    setError(null);
+    setError('');
     try {
-      const params = {};
-      if (filters.status) params.status = filters.status;
+      const params = {
+        page: filters.page,
+        size: filters.size,
+        sortBy: 'createdAt',
+        sortDir: 'desc',
+      };
+      if (filters.status)   params.status   = filters.status;
       if (filters.category) params.category = filters.category;
       if (filters.priority) params.priority = filters.priority;
-      if (filters.keyword) params.keyword = filters.keyword;
-      params.page = filters.page;
-      params.size = filters.size;
-      params.sortBy = filters.sortBy;
-      params.sortDir = filters.sortDir;
+      if (filters.keyword)  params.keyword  = filters.keyword;
 
       const data = await fetchTickets(params);
-      setTickets(data.content || []);
+
+      // If USER role: only show their own tickets (filter client side until auth is ready)
+      // When Module E auth is integrated, pass reportedBy = currentUser.email to API
+      let content = data.content || [];
+      setTickets(content);
       setTotalPages(data.totalPages || 0);
       setTotalElements(data.totalElements || 0);
     } catch (e) {
-      setError('Failed to load tickets. Make sure the backend is running on port 8081.');
+      if (e.code === 'ERR_NETWORK' || e.message?.includes('Network')) {
+        setError('Cannot connect to server. Make sure the backend is running on port 8081.');
+      } else {
+        setError(`Error: ${e.response?.data?.message || e.message}`);
+      }
     } finally {
       setLoading(false);
     }
   }, [filters]);
 
-  useEffect(() => {
-    loadTickets();
-  }, [loadTickets]);
-
-  useEffect(() => {
-    loadStats();
-  }, [loadStats]);
+  useEffect(() => { loadTickets(); }, [loadTickets]);
+  useEffect(() => { loadStats();   }, [loadStats]);
 
   const handleFilterChange = (key, value) => {
     setFilters(prev => ({ ...prev, [key]: value, page: 0 }));
-    const newParams = new URLSearchParams(searchParams);
-    if (value) newParams.set(key, value);
-    else newParams.delete(key);
-    newParams.delete('page');
-    setSearchParams(newParams);
-  };
-
-  const handlePageChange = (newPage) => {
-    setFilters(prev => ({ ...prev, page: newPage }));
   };
 
   const clearFilters = () => {
-    setFilters(prev => ({
-      ...prev, status: '', category: '', priority: '', keyword: '', page: 0,
-    }));
+    setFilters(prev => ({ ...prev, status: '', category: '', priority: '', keyword: '', page: 0 }));
     setSearchParams({});
   };
 
-  const hasActiveFilters = filters.status || filters.category || filters.priority || filters.keyword;
+  const hasFilters = filters.status || filters.category || filters.priority || filters.keyword;
 
   return (
     <div className="tickets-page">
       {/* Header */}
       <div className="page-header">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
           <div>
             <h1>🔧 Incident Tickets</h1>
             <p>Report and track maintenance issues across campus facilities</p>
           </div>
-          <div className="header-actions">
-            <button
-              className="btn btn-orange"
-              onClick={() => navigate('/tickets/new')}
-            >
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            {/* Role toggle — for demo until OAuth is integrated */}
+            <div className="role-toggle">
+              <button className={`role-btn ${role === 'USER' ? 'active' : ''}`} onClick={() => setRole('USER')}>
+                👤 User
+              </button>
+              <button className={`role-btn ${role === 'ADMIN' ? 'active' : ''}`} onClick={() => setRole('ADMIN')}>
+                🛡 Admin
+              </button>
+            </div>
+            <button className="btn btn-orange" onClick={() => navigate('/tickets/new')}>
               + New Ticket
             </button>
-            <button
-              className="btn btn-outline"
-              style={{ color: 'white', borderColor: 'rgba(255,255,255,0.5)' }}
-              onClick={() => navigate('/tickets/stats')}
-            >
-              📊 Dashboard
-            </button>
+            {role === 'ADMIN' && (
+              <button
+                className="btn btn-ghost"
+                style={{ color: 'white', borderColor: 'rgba(255,255,255,0.4)' }}
+                onClick={() => navigate('/tickets/stats')}
+              >
+                📊 Dashboard
+              </button>
+            )}
           </div>
         </div>
       </div>
 
       <div className="page-content">
-        {/* Stats */}
-        {stats && (
+        {/* Role banner */}
+        <div className={`role-banner ${role === 'ADMIN' ? 'admin' : 'user'}`}>
+          {role === 'ADMIN'
+            ? '🛡 Admin View — you can see all tickets, approve, reject and assign technicians'
+            : '👤 User View — showing tickets you have submitted'}
+        </div>
+
+        {/* Stats — admin only */}
+        {role === 'ADMIN' && stats && (
           <div className="stats-bar">
-            <StatCard value={stats.totalTickets ?? 0} label="Total" />
-            <StatCard value={stats.openTickets ?? 0} label="Open" className="orange" />
-            <StatCard value={stats.inProgressTickets ?? 0} label="In Progress" />
-            <StatCard value={stats.resolvedTickets ?? 0} label="Resolved" className="green" />
-            <StatCard
-              value={stats.byStatus?.CRITICAL ?? stats.byPriority?.CRITICAL ?? 0}
-              label="Critical"
-              className="red"
-            />
+            <div className="stat-card">
+              <div className="stat-value">{stats.totalTickets ?? 0}</div>
+              <div className="stat-label">Total</div>
+            </div>
+            <div className="stat-card orange">
+              <div className="stat-value">{stats.openTickets ?? 0}</div>
+              <div className="stat-label">Open</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-value">{stats.inProgressTickets ?? 0}</div>
+              <div className="stat-label">In Progress</div>
+            </div>
+            <div className="stat-card green">
+              <div className="stat-value">{stats.resolvedTickets ?? 0}</div>
+              <div className="stat-label">Resolved</div>
+            </div>
+            <div className="stat-card red">
+              <div className="stat-value">{stats.byPriority?.CRITICAL ?? 0}</div>
+              <div className="stat-label">Critical</div>
+            </div>
           </div>
         )}
 
@@ -238,17 +216,12 @@ export default function TicketsPage() {
             <span className="search-icon">🔍</span>
             <input
               type="text"
-              placeholder="Search tickets by title or description..."
+              placeholder="Search by title or description..."
               value={filters.keyword}
               onChange={e => handleFilterChange('keyword', e.target.value)}
             />
           </div>
-
-          <select
-            className="filter-select"
-            value={filters.status}
-            onChange={e => handleFilterChange('status', e.target.value)}
-          >
+          <select className="filter-select" value={filters.status} onChange={e => handleFilterChange('status', e.target.value)}>
             <option value="">All Statuses</option>
             <option value="OPEN">Open</option>
             <option value="IN_PROGRESS">In Progress</option>
@@ -256,24 +229,14 @@ export default function TicketsPage() {
             <option value="CLOSED">Closed</option>
             <option value="REJECTED">Rejected</option>
           </select>
-
-          <select
-            className="filter-select"
-            value={filters.priority}
-            onChange={e => handleFilterChange('priority', e.target.value)}
-          >
+          <select className="filter-select" value={filters.priority} onChange={e => handleFilterChange('priority', e.target.value)}>
             <option value="">All Priorities</option>
             <option value="LOW">Low</option>
             <option value="MEDIUM">Medium</option>
             <option value="HIGH">High</option>
             <option value="CRITICAL">Critical</option>
           </select>
-
-          <select
-            className="filter-select"
-            value={filters.category}
-            onChange={e => handleFilterChange('category', e.target.value)}
-          >
+          <select className="filter-select" value={filters.category} onChange={e => handleFilterChange('category', e.target.value)}>
             <option value="">All Categories</option>
             <option value="ELECTRICAL">Electrical</option>
             <option value="PLUMBING">Plumbing</option>
@@ -284,23 +247,20 @@ export default function TicketsPage() {
             <option value="CLEANING">Cleaning</option>
             <option value="OTHER">Other</option>
           </select>
-
-          {hasActiveFilters && (
-            <button className="btn btn-ghost btn-sm" onClick={clearFilters}>
-              ✕ Clear
-            </button>
+          {hasFilters && (
+            <button className="btn btn-ghost btn-sm" onClick={clearFilters}>✕ Clear</button>
           )}
         </div>
 
         {/* Results count */}
-        {!loading && (
-          <div style={{ marginBottom: '1rem', fontSize: '0.875rem', color: 'var(--gray-500)' }}>
+        {!loading && !error && (
+          <div style={{ marginBottom: 12, fontSize: 13, color: 'var(--text-light)' }}>
             {totalElements} ticket{totalElements !== 1 ? 's' : ''} found
-            {hasActiveFilters && ' (filtered)'}
+            {hasFilters && ' (filtered)'}
           </div>
         )}
 
-        {/* Tickets grid */}
+        {/* Content */}
         {loading ? (
           <div className="loading-spinner"><div className="spinner" /></div>
         ) : error ? (
@@ -308,24 +268,22 @@ export default function TicketsPage() {
             <div className="empty-state-icon">⚠️</div>
             <h3>Connection Error</h3>
             <p>{error}</p>
-            <button className="btn btn-primary" onClick={loadTickets}>Retry</button>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
+              <button className="btn btn-primary" onClick={loadTickets}>🔄 Retry</button>
+              <button className="btn btn-ghost" onClick={() => window.open('http://localhost:8081/api/v1/tickets', '_blank')}>
+                Test API
+              </button>
+            </div>
           </div>
         ) : tickets.length === 0 ? (
           <div className="empty-state">
             <div className="empty-state-icon">🎉</div>
-            <h3>No tickets found</h3>
-            <p>
-              {hasActiveFilters
-                ? 'No tickets match your current filters.'
-                : 'No incidents reported yet. Campus is running smoothly!'}
-            </p>
-            {hasActiveFilters ? (
-              <button className="btn btn-ghost" onClick={clearFilters}>Clear Filters</button>
-            ) : (
-              <button className="btn btn-orange" onClick={() => navigate('/tickets/new')}>
-                Report an Issue
-              </button>
-            )}
+            <h3>{hasFilters ? 'No tickets match your filters' : 'No tickets yet'}</h3>
+            <p>{hasFilters ? 'Try clearing filters' : 'Campus is running smoothly!'}</p>
+            {hasFilters
+              ? <button className="btn btn-ghost" onClick={clearFilters}>Clear Filters</button>
+              : <button className="btn btn-orange" onClick={() => navigate('/tickets/new')}>Report an Issue</button>
+            }
           </div>
         ) : (
           <>
@@ -334,39 +292,26 @@ export default function TicketsPage() {
                 <TicketCard
                   key={ticket.id}
                   ticket={ticket}
-                  onClick={(id) => navigate(`/tickets/${id}`)}
+                  onClick={id => navigate(`/tickets/${id}`)}
                 />
               ))}
             </div>
 
-            {/* Pagination */}
             {totalPages > 1 && (
               <div className="pagination">
-                <button
-                  disabled={filters.page === 0}
-                  onClick={() => handlePageChange(filters.page - 1)}
-                >
+                <button disabled={filters.page === 0} onClick={() => setFilters(p => ({ ...p, page: p.page - 1 }))}>
                   ← Prev
                 </button>
-                {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
-                  const pageNum = filters.page < 4
-                    ? i
-                    : filters.page + i - 3;
-                  if (pageNum >= totalPages) return null;
-                  return (
-                    <button
-                      key={pageNum}
-                      className={filters.page === pageNum ? 'active' : ''}
-                      onClick={() => handlePageChange(pageNum)}
-                    >
-                      {pageNum + 1}
-                    </button>
-                  );
-                })}
-                <button
-                  disabled={filters.page >= totalPages - 1}
-                  onClick={() => handlePageChange(filters.page + 1)}
-                >
+                {Array.from({ length: totalPages }, (_, i) => (
+                  <button
+                    key={i}
+                    className={filters.page === i ? 'active' : ''}
+                    onClick={() => setFilters(p => ({ ...p, page: i }))}
+                  >
+                    {i + 1}
+                  </button>
+                ))}
+                <button disabled={filters.page >= totalPages - 1} onClick={() => setFilters(p => ({ ...p, page: p.page + 1 }))}>
                   Next →
                 </button>
               </div>
