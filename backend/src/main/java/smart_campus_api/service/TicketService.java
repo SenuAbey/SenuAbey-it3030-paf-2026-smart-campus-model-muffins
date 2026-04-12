@@ -2,6 +2,7 @@ package smart_campus_api.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -77,8 +78,16 @@ public class TicketService {
             String keyword,
             Pageable pageable) {
 
+        // Use unsorted pageable for native query — ORDER BY is not passed from Spring
+        // because native queries don't understand camelCase field names (createdAt vs created_at)
+        Pageable unsorted = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
+
+        // Convert enums to String for native SQL query (avoids PostgreSQL LOWER(bytea) error)
         return ticketRepository.findWithFilters(
-                status, category, priority, resourceId, reportedBy, assignedTo, keyword, pageable
+                status != null ? status.name() : null,
+                category != null ? category.name() : null,
+                priority != null ? priority.name() : null,
+                resourceId, reportedBy, assignedTo, keyword, unsorted
         ).map(t -> toResponseDTO(t, false));
     }
 
