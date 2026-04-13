@@ -13,6 +13,7 @@ import TicketsPage from './pages/TicketsPage';
 import TicketDetailPage from './pages/TicketDetailPage';
 import CreateTicketPage from './pages/CreateTicketPage';
 import TicketStatsPage from './pages/TicketStatsPage';
+import TechniciansPage from './pages/TechniciansPage';
 import './global.css';
 
 export const RoleContext = React.createContext('USER');
@@ -88,6 +89,9 @@ function App() {
           } />
           <Route path="/tickets/:id" element={
             <ProtectedRoute><TicketDetailPage /></ProtectedRoute>
+          } />
+          <Route path="/technicians" element={
+            <ProtectedRoute><TechniciansPage /></ProtectedRoute>
           } />
         </Routes>
       </BrowserRouter>
