@@ -1,13 +1,13 @@
 package smart_campus_api.dto;
 
-import jakarta.validation.constraints.NotBlank;
-
 public class TicketAssignDTO {
 
-    @NotBlank(message = "Technician email or name is required")
+    // Frontend sends technicianId (from technician panel) OR assignedTo (email string)
+    private Long technicianId;
     private String assignedTo;
 
-    // Getters and Setters
+    public Long getTechnicianId() { return technicianId; }
+    public void setTechnicianId(Long technicianId) { this.technicianId = technicianId; }
     public String getAssignedTo() { return assignedTo; }
     public void setAssignedTo(String assignedTo) { this.assignedTo = assignedTo; }
 }

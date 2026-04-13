@@ -154,12 +154,32 @@ public class TicketService {
         return toResponseDTO(ticketRepository.save(ticket), false);
     }
 
+    @Autowired(required = false)
+    private smart_campus_api.repository.TechnicianRepository technicianRepo;
+
     @Transactional
     public TicketResponseDTO assignTechnician(Long id, TicketAssignDTO dto) {
         IncidentTicket ticket = ticketRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Ticket not found with id: " + id));
 
-        ticket.setAssignedTo(dto.getAssignedTo());
+        String emailToAssign = dto.getAssignedTo();
+
+        // If technicianId provided, look up email and update workload counter
+        if (dto.getTechnicianId() != null && technicianRepo != null) {
+            smart_campus_api.entity.Technician tech = technicianRepo.findById(dto.getTechnicianId())
+                    .orElse(null);
+            if (tech != null) {
+                emailToAssign = tech.getEmail();
+                tech.setActiveTicketCount(tech.getActiveTicketCount() + 1);
+                technicianRepo.save(tech);
+            }
+        }
+
+        if (emailToAssign == null || emailToAssign.isBlank()) {
+            throw new RuntimeException("assignedTo email or technicianId is required.");
+        }
+
+        ticket.setAssignedTo(emailToAssign);
 
         // Auto-move to IN_PROGRESS when assigned, if still OPEN
         if (ticket.getStatus() == TicketStatus.OPEN) {

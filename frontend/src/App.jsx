@@ -8,6 +8,7 @@ import TicketsPage from './pages/TicketsPage';
 import TicketDetailPage from './pages/TicketDetailPage';
 import CreateTicketPage from './pages/CreateTicketPage';
 import TicketStatsPage from './pages/TicketStatsPage';
+import TechniciansPage from './pages/TechniciansPage';
 
 export const RoleContext = React.createContext('STUDENT');
 
@@ -25,6 +26,7 @@ function App() {
           <Route path="/tickets/stats" element={<TicketStatsPage />} />
           <Route path="/tickets/new" element={<CreateTicketPage />} />
           <Route path="/tickets/:id" element={<TicketDetailPage />} />
+          <Route path="/technicians" element={<TechniciansPage />} />
         </Routes>
       </BrowserRouter>
     </RoleContext.Provider>
