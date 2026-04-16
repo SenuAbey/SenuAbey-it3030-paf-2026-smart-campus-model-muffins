@@ -16,7 +16,7 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
 
     // Conflict check query — checks overlapping bookings for same resource
     @Query("SELECT b FROM Booking b WHERE b.resource.id = :resourceId " +
-            "AND b.status = 'APPROVED' " +
+            "AND b.status IN ('PENDING', 'APPROVED') " +
             "AND b.startTime < :endTime AND b.endTime > :startTime")
     List<Booking> findConflictingBookings(
             @Param("resourceId") String resourceId,  // ← change Long to String
