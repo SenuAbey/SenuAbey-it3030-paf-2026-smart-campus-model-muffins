@@ -159,6 +159,7 @@ export default function TicketDetailPage() {
 
   // Rating modal — shown after resolving a ticket that has an assigned technician
   const [showRatingModal, setShowRatingModal] = useState(false);
+  const [alreadyRated, setAlreadyRated]       = useState(false);
 
   // Comment states
   const [commentText, setCommentText]     = useState('');
@@ -360,8 +361,9 @@ export default function TicketDetailPage() {
           ticket={ticket}
           onClose={() => setShowRatingModal(false)}
           onRated={() => {
-            setSuccessMsg('Rating submitted — thank you!');
+            setSuccessMsg('Rating submitted — thank you for your feedback!');
             setShowRatingModal(false);
+            setAlreadyRated(true);
           }}
         />
       )}
@@ -614,7 +616,7 @@ export default function TicketDetailPage() {
                 <div style={{ fontSize: 11, color: 'var(--text-light)', marginTop: 6 }}>
                   {role === 'ADMIN'
                     ? 'Admin: can change status, assign technicians'
-                    : 'User: can view and comment only'}
+                    : 'User: can view, comment and rate the technician'}
                 </div>
               </div>
             </div>
@@ -667,26 +669,7 @@ export default function TicketDetailPage() {
                   </div>
                 )}
 
-                {/* Rate technician button — shown when RESOLVED and technician was assigned */}
-                {ticket.status === 'RESOLVED' && ticket.assignedTo && (
-                  <div className="detail-card" style={{ marginBottom: 12 }}>
-                    <div className="detail-card-header">⭐ Rate Technician</div>
-                    <div className="detail-card-body">
-                      <p style={{ fontSize: 13, color: 'var(--text-light)', marginBottom: 10 }}>
-                        Rate the work done by <strong>{ticket.assignedTo}</strong>
-                      </p>
-                      <button
-                        className="btn btn-orange"
-                        style={{ width: '100%', justifyContent: 'center' }}
-                        onClick={() => setShowRatingModal(true)}
-                      >
-                        ⭐ Submit Rating
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Danger zone */}
+                {/* Danger zone — admin only */}
                 <div className="detail-card">
                   <div className="detail-card-header" style={{ color: 'var(--danger)' }}>⚠️ Danger Zone</div>
                   <div className="detail-card-body">
@@ -700,6 +683,51 @@ export default function TicketDetailPage() {
                   </div>
                 </div>
               </>
+            )}
+
+            {/* ── Rate Technician — visible to BOTH USER and ADMIN ─────
+                Shows when ticket is RESOLVED and has an assigned technician
+                Disappears after rating is submitted                      */}
+            {['RESOLVED', 'CLOSED'].includes(ticket.status) && ticket.assignedTo && !alreadyRated && (
+              <div className="detail-card" style={{ marginTop: 12 }}>
+                <div className="detail-card-header">⭐ Rate the Technician</div>
+                <div className="detail-card-body">
+                  {/* Technician info */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12, padding: '10px 12px', background: '#f8f9fa', borderRadius: 8, border: '1px solid var(--border)' }}>
+                    <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'linear-gradient(135deg, var(--sliit-blue), var(--sliit-dark))', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 14, flexShrink: 0 }}>
+                      {ticket.assignedTo?.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--text)' }}>{ticket.assignedTo}</div>
+                      <div style={{ fontSize: 11, color: 'var(--text-light)' }}>Assigned technician</div>
+                    </div>
+                  </div>
+
+                  <p style={{ fontSize: 13, color: 'var(--text-light)', marginBottom: 12, lineHeight: 1.5 }}>
+                    The issue has been resolved. How satisfied are you with the work done?
+                  </p>
+                  <button
+                    className="btn btn-orange"
+                    style={{ width: '100%', justifyContent: 'center', padding: '10px' }}
+                    onClick={() => setShowRatingModal(true)}
+                  >
+                    ⭐ Rate the Work
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Already rated confirmation */}
+            {alreadyRated && ticket.assignedTo && (
+              <div className="detail-card" style={{ marginTop: 12 }}>
+                <div className="detail-card-body">
+                  <div style={{ textAlign: 'center', padding: '10px 0', color: 'var(--success)' }}>
+                    <div style={{ fontSize: 24, marginBottom: 6 }}>⭐</div>
+                    <div style={{ fontWeight: 700, fontSize: 13 }}>Rating Submitted!</div>
+                    <div style={{ fontSize: 12, color: 'var(--text-light)', marginTop: 4 }}>Thank you for your feedback</div>
+                  </div>
+                </div>
+              </div>
             )}
 
             {/* ── Summary (visible to both USER and ADMIN) ──────────── */}
