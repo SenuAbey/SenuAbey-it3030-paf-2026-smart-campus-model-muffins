@@ -1,6 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { fetchTicketStats } from '../api/ticketApi';
+import { RoleContext } from '../App';
+import { useAuthStore } from '../store/authStore';
 import './tickets.css';
 
 // Simple bar chart component (no external library needed)
@@ -96,16 +98,25 @@ function StatusRing({ byStatus, total }) {
 
 export default function TicketStatsPage() {
   const navigate = useNavigate();
+  const { role } = useContext(RoleContext);
+  const { user } = useAuthStore();
+  const isAdmin = role === 'ADMIN';
+
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
+    // Redirect non-admins away immediately
+    if (!isAdmin) {
+      navigate('/tickets');
+      return;
+    }
     fetchTicketStats()
       .then(setStats)
       .catch(() => setError('Failed to load statistics.'))
       .finally(() => setLoading(false));
-  }, []);
+  }, [isAdmin, navigate]);
 
   const priorityColors = {
     LOW: '#10b981', MEDIUM: '#f59e0b', HIGH: '#f97316', CRITICAL: '#ef4444',
@@ -119,15 +130,41 @@ export default function TicketStatsPage() {
   return (
     <div className="tickets-page">
       <div className="page-header">
-        <button
-          className="btn btn-ghost btn-sm"
-          style={{ color: 'white', borderColor: 'rgba(255,255,255,0.4)', marginBottom: '0.75rem' }}
-          onClick={() => navigate('/tickets')}
-        >
-          ← Back to Tickets
-        </button>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', flexWrap: 'wrap', gap: 8 }}>
+          <button
+            className="btn btn-ghost btn-sm"
+            style={{ color: 'white', borderColor: 'rgba(255,255,255,0.4)' }}
+            onClick={() => navigate('/tickets')}
+          >
+            ← Back to Tickets
+          </button>
+
+          {/* Admin identity chip */}
+          {user && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6,
+              background: 'rgba(255,255,255,0.15)', borderRadius: 20,
+              padding: '4px 10px 4px 4px', border: '1px solid rgba(255,255,255,0.3)' }}>
+              {user.profilePicture
+                ? <img src={user.profilePicture} alt="avatar"
+                    style={{ width: 24, height: 24, borderRadius: '50%' }} />
+                : <div style={{ width: 24, height: 24, borderRadius: '50%',
+                    background: 'rgba(255,255,255,0.3)', display: 'flex',
+                    alignItems: 'center', justifyContent: 'center',
+                    fontSize: 11, fontWeight: 700, color: '#fff' }}>
+                    {user.name?.charAt(0) || '?'}
+                  </div>
+              }
+              <span style={{ fontSize: 12, color: '#fff' }}>{user.name || user.email}</span>
+              <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 6px',
+                borderRadius: 4, background: '#E87722', color: '#fff' }}>
+                ADMIN
+              </span>
+            </div>
+          )}
+        </div>
+
         <h1>📊 Ticket Dashboard</h1>
-        <p>Maintenance & incident overview for Smart Campus Operations</p>
+        <p>Maintenance &amp; incident overview for Smart Campus Operations</p>
       </div>
 
       <div className="page-content">

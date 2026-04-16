@@ -7,6 +7,15 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
+// Attach JWT token from localStorage to every request automatically
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
 export const fetchTickets = (params = {}) =>
   api.get('/tickets', { params }).then(r => r.data);
 
@@ -25,7 +34,6 @@ export const deleteTicket = (id) =>
 export const updateTicketStatus = (id, statusData) =>
   api.patch(`/tickets/${id}/status`, statusData).then(r => r.data);
 
-// FIXED: accepts full body object { technicianId, assignedTo }
 export const assignTechnician = (ticketId, body) =>
   api.patch(`/tickets/${ticketId}/assign`, body).then(r => r.data);
 
@@ -36,8 +44,12 @@ export const uploadAttachment = (ticketId, file, uploadedBy = 'anonymous') => {
   const formData = new FormData();
   formData.append('file', file);
   formData.append('uploadedBy', uploadedBy);
+  const token = localStorage.getItem('token');
   return axios.post(`${BASE_URL}/tickets/${ticketId}/attachments`, formData, {
-    headers: { 'Content-Type': 'multipart/form-data' },
+    headers: {
+      'Content-Type': 'multipart/form-data',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
   }).then(r => r.data);
 };
 

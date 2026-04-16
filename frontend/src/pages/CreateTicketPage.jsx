@@ -1,39 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { createTicket } from '../api/ticketApi';
+import { getResources } from '../api/resourceApi';
+import { useAuthStore } from '../store/authStore';
 import './tickets.css';
-
-// ─── Campus Location Data ─────────────────────────────────────────────────────
-
-const BUILDINGS = [
-  { id: 'A', label: 'A Block' },
-  { id: 'B', label: 'B Block' },
-  { id: 'C', label: 'C Block' },
-  { id: 'D', label: 'D Block' },
-  { id: 'E', label: 'E Block' },
-  { id: 'F', label: 'F Block (New Building)' },
-  { id: 'G', label: 'G Block (New Building)' },
-  { id: 'MAIN', label: 'Main Building' },
-  { id: 'BS', label: 'Business School' },
-  { id: 'ENG', label: 'Engineering Faculty Building' },
-  { id: 'GYM', label: 'Gymnasium' },
-  { id: 'OTHER', label: 'Other / Common Area' },
-];
-
-// Blocks that have standard floor+room numbering (A-F blocks)
-const STANDARD_BLOCKS = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
-const FLOORS = [1, 2, 3, 4, 5, 6];
-const ROOMS_PER_FLOOR = [1, 2, 3, 4, 5, 6];
-
-// Generate lab options for a given block and floor
-// e.g. Block A, Floor 4 → A401, A402, A403, A404, A405, A406
-const generateLabOptions = (block, floor) => {
-  if (!block || !floor) return [];
-  return ROOMS_PER_FLOOR.map(room => {
-    const roomNum = `${block}${floor}0${room}`;
-    return { value: roomNum, label: `Lab / Room ${roomNum}` };
-  });
-};
 
 const CATEGORIES = [
   'ELECTRICAL', 'PLUMBING', 'HVAC', 'IT_EQUIPMENT',
@@ -47,23 +17,18 @@ const priorityInfo = {
   CRITICAL: 'Immediate safety or operational risk — urgent!',
 };
 
-// ─── Main Component ───────────────────────────────────────────────────────────
-
 export default function CreateTicketPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const prefilledResourceId = searchParams.get('resourceId');
 
-  const [resources, setResources]           = useState([]);
-  const [submitting, setSubmitting]         = useState(false);
-  const [errors, setErrors]                 = useState({});
-  const [submitError, setSubmitError]       = useState('');
+  const { user } = useAuthStore();
 
-  // Location state
-  const [selectedBuilding, setSelectedBuilding] = useState('');
-  const [selectedFloor, setSelectedFloor]       = useState('');
-  const [selectedRoom, setSelectedRoom]         = useState('');
-  const [customLocation, setCustomLocation]     = useState('');
+  const [resources, setResources]     = useState([]);
+  const [loadingRes, setLoadingRes]   = useState(true);
+  const [submitting, setSubmitting]   = useState(false);
+  const [errors, setErrors]           = useState({});
+  const [submitError, setSubmitError] = useState('');
 
   const [form, setForm] = useState({
     title: '',
@@ -72,53 +37,32 @@ export default function CreateTicketPage() {
     priority: 'MEDIUM',
     resourceId: prefilledResourceId || '',
     resourceName: '',
-    reportedBy: '',
-    preferredContact: '',
   });
 
-  // Load resources from Module A
+  // Load ACTIVE resources from the catalogue API
   useEffect(() => {
     const loadResources = async () => {
+      setLoadingRes(true);
       try {
-        const { default: axios } = await import('axios');
-        const res = await axios.get('http://localhost:8081/api/v1/resources', {
-          params: { size: 100 },
-        });
+        const res = await getResources({ size: 200, status: 'ACTIVE' });
         const content = res.data?.content || res.data || [];
-        setResources(Array.isArray(content) ? content : []);
+        const list = Array.isArray(content) ? content : [];
+        setResources(list);
 
         if (prefilledResourceId) {
-          const found = content.find(r => String(r.id) === String(prefilledResourceId));
+          const found = list.find(r => String(r.id) === String(prefilledResourceId));
           if (found) {
-            setForm(prev => ({ ...prev, resourceId: found.id, resourceName: found.name }));
+            setForm(prev => ({ ...prev, resourceId: String(found.id), resourceName: found.name }));
           }
         }
       } catch (e) {
         console.warn('Could not load resources:', e.message);
+      } finally {
+        setLoadingRes(false);
       }
     };
     loadResources();
   }, [prefilledResourceId]);
-
-  // Compute the final location string from selections
-  const computedLocation = () => {
-    if (!selectedBuilding) return customLocation;
-    const bLabel = BUILDINGS.find(b => b.id === selectedBuilding)?.label || selectedBuilding;
-    if (!STANDARD_BLOCKS.includes(selectedBuilding)) {
-      return selectedRoom
-        ? `${bLabel} — ${selectedRoom}`
-        : bLabel;
-    }
-    if (!selectedFloor) return bLabel;
-    if (!selectedRoom)  return `${bLabel}, Floor ${selectedFloor}`;
-    return `${bLabel}, Floor ${selectedFloor}, Room ${selectedRoom}`;
-  };
-
-  const handleBuildingChange = (val) => {
-    setSelectedBuilding(val);
-    setSelectedFloor('');
-    setSelectedRoom('');
-  };
 
   const handleResourceChange = (e) => {
     const id = e.target.value;
@@ -128,14 +72,13 @@ export default function CreateTicketPage() {
 
   const validate = () => {
     const errs = {};
-    if (!form.title.trim())        errs.title       = 'Title is required';
-    else if (form.title.length < 5) errs.title      = 'Title must be at least 5 characters';
-    if (!form.description.trim())  errs.description  = 'Description is required';
+    if (!form.title.trim())                errs.title       = 'Title is required';
+    else if (form.title.length < 5)        errs.title       = 'Title must be at least 5 characters';
+    if (!form.description.trim())          errs.description = 'Description is required';
     else if (form.description.length < 10) errs.description = 'Please describe the issue in more detail';
-    if (!form.category)            errs.category     = 'Category is required';
-    if (!form.priority)            errs.priority     = 'Priority is required';
-    if (!form.reportedBy.trim())   errs.reportedBy   = 'Your name or email is required';
-    if (!selectedBuilding && !customLocation.trim()) errs.location = 'Location is required';
+    if (!form.category)                    errs.category    = 'Category is required';
+    if (!form.priority)                    errs.priority    = 'Priority is required';
+    if (!form.resourceId)                  errs.resourceId  = 'You must select a resource';
     return errs;
   };
 
@@ -147,16 +90,17 @@ export default function CreateTicketPage() {
     setSubmitting(true);
     setSubmitError('');
     try {
+      const selectedResource = resources.find(r => String(r.id) === String(form.resourceId));
       const payload = {
-        title:            form.title.trim(),
-        description:      form.description.trim(),
-        category:         form.category,
-        priority:         form.priority,
-        reportedBy:       form.reportedBy.trim(),
-        preferredContact: form.preferredContact.trim() || null,
-        location:         computedLocation() || null,
-        resourceName:     form.resourceName || null,
-        resourceId:       form.resourceId ? parseInt(form.resourceId) : null,
+        title:           form.title.trim(),
+        description:     form.description.trim(),
+        category:        form.category,
+        priority:        form.priority,
+        reportedBy:      user?.email || user?.name || 'unknown',
+        preferredContact: user?.email || null,
+        location:        selectedResource?.location || selectedResource?.building || null,
+        resourceName:    form.resourceName || null,
+        resourceId:      parseInt(form.resourceId),
       };
 
       const created = await createTicket(payload);
@@ -164,18 +108,16 @@ export default function CreateTicketPage() {
         state: { success: 'Your ticket has been submitted successfully!' },
       });
     } catch (e) {
-      setSubmitError(
-        e.response?.data?.message ||
-        'Failed to submit ticket. Please make sure the backend is running.'
-      );
+      const msg = e.response?.data?.message || e.response?.data?.error;
+      setSubmitError(msg || `Error ${e.response?.status || ''}: Failed to submit ticket.`);
     } finally {
       setSubmitting(false);
     }
   };
 
   const field = (key, value) => setForm(prev => ({ ...prev, [key]: value }));
-  const isStandardBlock = STANDARD_BLOCKS.includes(selectedBuilding);
-  const labOptions = generateLabOptions(selectedBuilding, selectedFloor);
+
+  const selectedResource = resources.find(r => String(r.id) === String(form.resourceId));
 
   return (
     <div className="tickets-page">
@@ -192,10 +134,13 @@ export default function CreateTicketPage() {
         <p>Submit a maintenance or facility issue — our team will respond promptly</p>
       </div>
 
-      {/* User role notice */}
+      {/* Submitting as logged-in user */}
       <div style={{ padding: '0 5%', marginTop: '1rem' }}>
         <div className="role-banner user">
-          👤 You are submitting as a <strong>User</strong> — your ticket will be reviewed by an admin
+          👤 Submitting as <strong>{user?.name || user?.email || 'Unknown User'}</strong>
+          {user?.email && user?.name && (
+            <span style={{ opacity: 0.8, marginLeft: 6 }}>({user.email})</span>
+          )}
         </div>
       </div>
 
@@ -211,7 +156,7 @@ export default function CreateTicketPage() {
               <div className="toast-error">⚠️ {submitError}</div>
             )}
 
-            {/* ── Incident Details ───────────────────────── */}
+            {/* ── Incident Details ── */}
             <p className="form-section-title">📋 Incident Details</p>
 
             <div className="form-group">
@@ -264,124 +209,61 @@ export default function CreateTicketPage() {
               </div>
             </div>
 
-            {/* ── Location ───────────────────────────────── */}
-            <p className="form-section-title">📍 Location</p>
+            {/* ── Linked Resource (compulsory) ── */}
+            <p className="form-section-title">🖥️ Linked Resource <span className="required">*</span></p>
 
             <div className="form-group">
-              <label>Building / Area <span className="required">*</span></label>
-              <select value={selectedBuilding} onChange={e => handleBuildingChange(e.target.value)}>
-                <option value="">Select building...</option>
-                {BUILDINGS.map(b => (
-                  <option key={b.id} value={b.id}>{b.label}</option>
-                ))}
-              </select>
-              {errors.location && !selectedBuilding && (
-                <span className="form-error">⚠ {errors.location}</span>
-              )}
-            </div>
-
-            {/* Floor selection — only for standard A-G blocks */}
-            {isStandardBlock && selectedBuilding && (
-              <div className="form-row">
-                <div className="form-group">
-                  <label>Floor</label>
-                  <select value={selectedFloor} onChange={e => { setSelectedFloor(e.target.value); setSelectedRoom(''); }}>
-                    <option value="">Select floor...</option>
-                    {FLOORS.map(f => (
-                      <option key={f} value={f}>Floor {f}</option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Room/Lab — only after floor selected */}
-                {selectedFloor && (
-                  <div className="form-group">
-                    <label>Lab / Room</label>
-                    <select value={selectedRoom} onChange={e => setSelectedRoom(e.target.value)}>
-                      <option value="">Select lab/room...</option>
-                      {labOptions.map(opt => (
-                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* For non-standard buildings, show a free text field */}
-            {selectedBuilding && !isStandardBlock && (
-              <div className="form-group">
-                <label>Specific Location / Room</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Main Hall, Ground Floor Reception, Pool Area..."
-                  value={customLocation}
-                  onChange={e => setCustomLocation(e.target.value)}
-                />
-              </div>
-            )}
-
-            {/* Show selected location preview */}
-            {computedLocation() && (
-              <div style={{
-                padding: '8px 12px', background: '#e8f0f9', borderRadius: 'var(--radius-sm)',
-                fontSize: '13px', color: 'var(--sliit-blue)', marginBottom: '14px',
-                border: '1px solid #bdd0ea',
-              }}>
-                📍 Selected: <strong>{computedLocation()}</strong>
-              </div>
-            )}
-
-            {/* ── Resource ───────────────────────────────── */}
-            <p className="form-section-title">🖥️ Linked Resource (Optional)</p>
-
-            <div className="form-group">
-              <label>Resource</label>
-              <select value={form.resourceId} onChange={handleResourceChange}>
-                <option value="">No specific resource / General area issue</option>
+              <label>Select Resource <span className="required">*</span></label>
+              <select
+                value={form.resourceId}
+                onChange={handleResourceChange}
+                disabled={loadingRes}
+              >
+                <option value="">
+                  {loadingRes ? 'Loading resources...' : '— Select a resource —'}
+                </option>
                 {resources.map(r => (
                   <option key={r.id} value={r.id}>
-                    {r.name} — {r.type?.replace(/_/g, ' ')}
+                    [{r.type?.replace(/_/g, ' ')}] {r.name}
+                    {r.location ? ` — ${r.location}` : ''}
+                    {r.building ? ` (${r.building})` : ''}
                   </option>
                 ))}
               </select>
-              <span style={{ fontSize: '11px', color: 'var(--text-light)' }}>
-                Link to a specific resource if the issue is related to equipment
-              </span>
+              {errors.resourceId && <span className="form-error">⚠ {errors.resourceId}</span>}
+              {!loadingRes && resources.length > 0 && (
+                <span style={{ fontSize: '11px', color: 'var(--text-light)' }}>
+                  {resources.length} active resources available from the catalogue
+                </span>
+              )}
             </div>
 
-            {/* ── Reporter Info ──────────────────────────── */}
-            <p className="form-section-title">👤 Your Information</p>
-
-            <div className="form-row">
-              <div className="form-group">
-                <label>Your Name / Email <span className="required">*</span></label>
-                <input
-                  type="text"
-                  placeholder="e.g. senuthi@sliit.lk"
-                  value={form.reportedBy}
-                  onChange={e => field('reportedBy', e.target.value)}
-                />
-                {errors.reportedBy && <span className="form-error">⚠ {errors.reportedBy}</span>}
+            {/* Show resource details once selected */}
+            {selectedResource && (
+              <div style={{
+                padding: '10px 14px', background: '#e8f0f9', borderRadius: 'var(--radius-sm)',
+                fontSize: '13px', color: 'var(--sliit-blue)', marginBottom: '14px',
+                border: '1px solid #bdd0ea', display: 'flex', gap: '16px', flexWrap: 'wrap',
+              }}>
+                <span>🏷️ <strong>{selectedResource.name}</strong></span>
+                <span>📂 {selectedResource.type?.replace(/_/g, ' ')}</span>
+                {selectedResource.location && <span>📍 {selectedResource.location}</span>}
+                {selectedResource.building && <span>🏢 {selectedResource.building}</span>}
+                <span style={{
+                  color: selectedResource.status === 'ACTIVE' ? '#1D9E75' : '#E24B4A',
+                  fontWeight: 600,
+                }}>
+                  ● {selectedResource.status}
+                </span>
               </div>
-
-              <div className="form-group">
-                <label>Preferred Contact</label>
-                <input
-                  type="text"
-                  placeholder="Phone number or alternate contact"
-                  value={form.preferredContact}
-                  onChange={e => field('preferredContact', e.target.value)}
-                />
-              </div>
-            </div>
+            )}
           </div>
 
           <div className="form-footer">
             <button className="btn btn-ghost" onClick={() => navigate('/tickets')} disabled={submitting}>
               Cancel
             </button>
-            <button className="btn btn-primary" onClick={handleSubmit} disabled={submitting}>
+            <button className="btn btn-primary" onClick={handleSubmit} disabled={submitting || loadingRes}>
               {submitting ? '⏳ Submitting...' : '✓ Submit Ticket'}
             </button>
           </div>

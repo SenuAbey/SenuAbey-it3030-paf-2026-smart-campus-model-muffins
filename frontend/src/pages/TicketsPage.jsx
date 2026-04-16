@@ -1,6 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useContext } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { fetchTickets, fetchTicketStats } from '../api/ticketApi';
+import { RoleContext } from '../App';
+import { useAuthStore } from '../store/authStore';
 import './tickets.css';
 
 const timeAgo = (dateStr) => {
@@ -64,9 +66,10 @@ export default function TicketsPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
 
-  // Role — will come from Auth (Module E) when integrated
-  // For now: toggle between USER and ADMIN for demo/viva purposes
-  const [role, setRole] = useState('USER');
+  // Real role from OAuth login — no toggle needed
+  const { role } = useContext(RoleContext);
+  const { user, logoutUser } = useAuthStore();
+  const isAdmin = role === 'ADMIN';
 
   const [tickets, setTickets]           = useState([]);
   const [stats, setStats]               = useState(null);
@@ -85,13 +88,14 @@ export default function TicketsPage() {
   });
 
   const loadStats = useCallback(async () => {
+    if (!isAdmin) return; // only admins need stats bar
     try {
       const data = await fetchTicketStats();
       setStats(data);
     } catch (e) {
       console.warn('Stats load failed:', e.message);
     }
-  }, []);
+  }, [isAdmin]);
 
   const loadTickets = useCallback(async () => {
     setLoading(true);
@@ -108,12 +112,13 @@ export default function TicketsPage() {
       if (filters.priority) params.priority = filters.priority;
       if (filters.keyword)  params.keyword  = filters.keyword;
 
-      const data = await fetchTickets(params);
+      // USER role: filter to only their own tickets by email
+      if (!isAdmin && user?.email) {
+        params.reportedBy = user.email;
+      }
 
-      // If USER role: only show their own tickets (filter client side until auth is ready)
-      // When Module E auth is integrated, pass reportedBy = currentUser.email to API
-      let content = data.content || [];
-      setTickets(content);
+      const data = await fetchTickets(params);
+      setTickets(data.content || []);
       setTotalPages(data.totalPages || 0);
       setTotalElements(data.totalElements || 0);
     } catch (e) {
@@ -125,7 +130,7 @@ export default function TicketsPage() {
     } finally {
       setLoading(false);
     }
-  }, [filters]);
+  }, [filters, isAdmin, user?.email]);
 
   useEffect(() => { loadTickets(); }, [loadTickets]);
   useEffect(() => { loadStats();   }, [loadStats]);
@@ -141,29 +146,54 @@ export default function TicketsPage() {
 
   const hasFilters = filters.status || filters.category || filters.priority || filters.keyword;
 
+  const handleLogout = () => {
+    logoutUser();
+    navigate('/login');
+  };
+
   return (
     <div className="tickets-page">
-      {/* Header */}
+      {/* ── Header ─────────────────────────────────────────────────────── */}
       <div className="page-header">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
           <div>
             <h1>🔧 Incident Tickets</h1>
             <p>Report and track maintenance issues across campus facilities</p>
           </div>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-            {/* Role toggle — for demo until OAuth is integrated */}
-            <div className="role-toggle">
-              <button className={`role-btn ${role === 'USER' ? 'active' : ''}`} onClick={() => setRole('USER')}>
-                👤 User
-              </button>
-              <button className={`role-btn ${role === 'ADMIN' ? 'active' : ''}`} onClick={() => setRole('ADMIN')}>
-                🛡 Admin
-              </button>
-            </div>
+
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+            {/* User info chip */}
+            {user && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6,
+                background: 'rgba(255,255,255,0.15)', borderRadius: 20,
+                padding: '4px 10px 4px 4px', border: '1px solid rgba(255,255,255,0.3)' }}>
+                {user.profilePicture
+                  ? <img src={user.profilePicture} alt="avatar"
+                      style={{ width: 26, height: 26, borderRadius: '50%' }} />
+                  : <div style={{ width: 26, height: 26, borderRadius: '50%',
+                      background: 'rgba(255,255,255,0.3)', display: 'flex',
+                      alignItems: 'center', justifyContent: 'center',
+                      fontSize: 12, fontWeight: 700, color: '#fff' }}>
+                      {user.name?.charAt(0) || user.email?.charAt(0) || '?'}
+                    </div>
+                }
+                <span style={{ fontSize: 13, color: '#fff', fontWeight: 500 }}>
+                  {user.name || user.email}
+                </span>
+                <span style={{
+                  fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 4,
+                  background: isAdmin ? '#E87722' : '#1D9E75', color: '#fff',
+                }}>
+                  {role}
+                </span>
+              </div>
+            )}
+
             <button className="btn btn-orange" onClick={() => navigate('/tickets/new')}>
               + New Ticket
             </button>
-            {role === 'ADMIN' && (
+
+            {isAdmin && (
               <button
                 className="btn btn-ghost"
                 style={{ color: 'white', borderColor: 'rgba(255,255,255,0.4)' }}
@@ -172,20 +202,36 @@ export default function TicketsPage() {
                 📊 Dashboard
               </button>
             )}
+
+            <button
+              className="btn btn-ghost"
+              style={{ color: 'white', borderColor: 'rgba(255,255,255,0.4)' }}
+              onClick={() => navigate('/')}
+            >
+              🏠 Campus Hub
+            </button>
+
+            <button
+              className="btn btn-ghost"
+              style={{ color: 'white', borderColor: 'rgba(255,255,255,0.4)' }}
+              onClick={handleLogout}
+            >
+              Logout
+            </button>
           </div>
         </div>
       </div>
 
       <div className="page-content">
-        {/* Role banner */}
-        <div className={`role-banner ${role === 'ADMIN' ? 'admin' : 'user'}`}>
-          {role === 'ADMIN'
-            ? '🛡 Admin View — you can see all tickets, approve, reject and assign technicians'
-            : '👤 User View — showing tickets you have submitted'}
+        {/* ── Role banner ─────────────────────────────────────────────── */}
+        <div className={`role-banner ${isAdmin ? 'admin' : 'user'}`}>
+          {isAdmin
+            ? `🛡 Admin View — you can see all tickets, change status, and assign technicians`
+            : `👤 User View — showing tickets reported by ${user?.email || 'you'}`}
         </div>
 
-        {/* Stats — admin only */}
-        {role === 'ADMIN' && stats && (
+        {/* ── Stats bar (admin only) ───────────────────────────────────── */}
+        {isAdmin && stats && (
           <div className="stats-bar">
             <div className="stat-card">
               <div className="stat-value">{stats.totalTickets ?? 0}</div>
@@ -210,7 +256,7 @@ export default function TicketsPage() {
           </div>
         )}
 
-        {/* Filters */}
+        {/* ── Filters ─────────────────────────────────────────────────── */}
         <div className="filters-row">
           <div className="search-input-wrap">
             <span className="search-icon">🔍</span>
@@ -252,7 +298,7 @@ export default function TicketsPage() {
           )}
         </div>
 
-        {/* Results count */}
+        {/* ── Results count ───────────────────────────────────────────── */}
         {!loading && !error && (
           <div style={{ marginBottom: 12, fontSize: 13, color: 'var(--text-light)' }}>
             {totalElements} ticket{totalElements !== 1 ? 's' : ''} found
@@ -260,7 +306,7 @@ export default function TicketsPage() {
           </div>
         )}
 
-        {/* Content */}
+        {/* ── Content ─────────────────────────────────────────────────── */}
         {loading ? (
           <div className="loading-spinner"><div className="spinner" /></div>
         ) : error ? (
