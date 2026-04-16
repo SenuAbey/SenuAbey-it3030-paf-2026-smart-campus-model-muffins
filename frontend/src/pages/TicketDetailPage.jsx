@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useContext } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import {
   fetchTicketById,
@@ -12,6 +12,8 @@ import {
 } from '../api/ticketApi';
 import TechnicianAssignPanel from './TechnicianAssignPanel';
 import RatingModal from './RatingModal';
+import { RoleContext } from '../App';
+import { useAuthStore } from '../store/authStore';
 import './tickets.css';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -145,32 +147,32 @@ export default function TicketDetailPage() {
   const navigate   = useNavigate();
   const location   = useLocation();
 
-  const [ticket, setTicket]       = useState(null);
-  const [loading, setLoading]     = useState(true);
-  const [error, setError]         = useState('');
+  // Real role + user from OAuth — no toggle needed
+  const { role }        = useContext(RoleContext);
+  const { user, logoutUser } = useAuthStore();
+  const isAdmin         = role === 'ADMIN';
+  const currentUser     = user?.email || user?.name || 'unknown';
+
+  const [ticket, setTicket]         = useState(null);
+  const [loading, setLoading]       = useState(true);
+  const [error, setError]           = useState('');
   const [successMsg, setSuccessMsg] = useState(location.state?.success || '');
 
-  // Role toggle — USER or ADMIN (replaced by real auth when Module E done)
-  const [role, setRole] = useState('USER');
-
   // Status action modal
-  const [statusModal, setStatusModal]   = useState(null);
+  const [statusModal, setStatusModal]     = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
 
-  // Rating modal — shown after resolving a ticket that has an assigned technician
+  // Rating modal
   const [showRatingModal, setShowRatingModal] = useState(false);
   const [alreadyRated, setAlreadyRated]       = useState(false);
 
   // Comment states
-  const [commentText, setCommentText]     = useState('');
-  const [commentAuthor, setCommentAuthor] = useState('');
+  const [commentText, setCommentText]       = useState('');
   const [editingComment, setEditingComment] = useState(null);
   const [commentLoading, setCommentLoading] = useState(false);
 
   // Attachment states
   const [uploadingFile, setUploadingFile] = useState(false);
-
-  const currentUser = 'admin'; // replace with auth context when Module E integrated
 
   // ─── Load ticket ────────────────────────────────────────────────────────────
 
@@ -214,7 +216,6 @@ export default function TicketDetailPage() {
       setSuccessMsg(`Status updated to ${nextStatus.replace('_', ' ')}`);
       await loadTicket();
 
-      // Show rating modal when marking RESOLVED and a technician was assigned
       if (nextStatus === 'RESOLVED' && ticket?.assignedTo) {
         setShowRatingModal(true);
       }
@@ -261,13 +262,14 @@ export default function TicketDetailPage() {
   // ─── Comments ───────────────────────────────────────────────────────────────
 
   const handleAddComment = async () => {
-    if (!commentText.trim() || !commentAuthor.trim()) {
-      setError('Both your name and comment text are required.');
+    if (!commentText.trim()) {
+      setError('Comment text is required.');
       return;
     }
     setCommentLoading(true);
     try {
-      await addComment(id, commentText.trim(), commentAuthor.trim());
+      // Post comment using the logged-in user's name/email as the author
+      await addComment(id, commentText.trim(), currentUser);
       setCommentText('');
       setSuccessMsg('Comment added.');
       await loadTicket();
@@ -338,6 +340,8 @@ export default function TicketDetailPage() {
   );
 
   const availableActions = STATUS_ACTIONS[ticket.status] || [];
+  // User can only edit/delete their own comments; admins can edit/delete any
+  const canModifyComment = (comment) => isAdmin || comment.commentedBy === currentUser;
 
   return (
     <div className="tickets-page">
@@ -355,7 +359,7 @@ export default function TicketDetailPage() {
         />
       )}
 
-      {/* ── Rating modal — shown after RESOLVED when technician assigned ── */}
+      {/* ── Rating modal ────────────────────────────────────────────────── */}
       {showRatingModal && ticket?.assignedTo && (
         <RatingModal
           ticket={ticket}
@@ -370,13 +374,48 @@ export default function TicketDetailPage() {
 
       {/* ── Page Header ─────────────────────────────────────────────────── */}
       <div className="page-header">
-        <button
-          className="btn btn-ghost btn-sm"
-          style={{ color: 'white', borderColor: 'rgba(255,255,255,0.4)', marginBottom: 10 }}
-          onClick={() => navigate('/tickets')}
-        >
-          ← Back to Tickets
-        </button>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, flexWrap: 'wrap', gap: 8 }}>
+          <button
+            className="btn btn-ghost btn-sm"
+            style={{ color: 'white', borderColor: 'rgba(255,255,255,0.4)' }}
+            onClick={() => navigate('/tickets')}
+          >
+            ← Back to Tickets
+          </button>
+
+          {/* User identity chip in header */}
+          {user && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6,
+              background: 'rgba(255,255,255,0.15)', borderRadius: 20,
+              padding: '4px 10px 4px 4px', border: '1px solid rgba(255,255,255,0.3)' }}>
+              {user.profilePicture
+                ? <img src={user.profilePicture} alt="avatar"
+                    style={{ width: 24, height: 24, borderRadius: '50%' }} />
+                : <div style={{ width: 24, height: 24, borderRadius: '50%',
+                    background: 'rgba(255,255,255,0.3)', display: 'flex',
+                    alignItems: 'center', justifyContent: 'center',
+                    fontSize: 11, fontWeight: 700, color: '#fff' }}>
+                    {user.name?.charAt(0) || '?'}
+                  </div>
+              }
+              <span style={{ fontSize: 12, color: '#fff' }}>{user.name || user.email}</span>
+              <span style={{
+                fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 4,
+                background: isAdmin ? '#E87722' : '#1D9E75', color: '#fff',
+              }}>
+                {role}
+              </span>
+              <button
+                onClick={() => { logoutUser(); navigate('/login'); }}
+                style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.7)',
+                  cursor: 'pointer', fontSize: 12, padding: '0 2px' }}
+              >
+                Logout
+              </button>
+            </div>
+          )}
+        </div>
+
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
           <div>
             <div style={{ fontSize: 11, opacity: 0.6, marginBottom: 3 }}>TICKET #{ticket.id}</div>
@@ -444,7 +483,6 @@ export default function TicketDetailPage() {
                   {ticket.closedAt   && <div className="info-item"><label>Closed At</label><span>{formatDateTime(ticket.closedAt)}</span></div>}
                 </div>
 
-                {/* Resolution notes */}
                 {ticket.resolutionNotes && (
                   <div style={{ marginTop: 14, padding: '10px 14px', background: 'var(--status-resolved-bg)', borderRadius: 8, border: '1px solid #6ee7b7' }}>
                     <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--success)', marginBottom: 4 }}>✓ RESOLUTION NOTES</div>
@@ -452,7 +490,6 @@ export default function TicketDetailPage() {
                   </div>
                 )}
 
-                {/* Rejection reason */}
                 {ticket.rejectionReason && (
                   <div style={{ marginTop: 14, padding: '10px 14px', background: 'var(--status-rejected-bg)', borderRadius: 8, border: '1px solid #fecaca' }}>
                     <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--danger)', marginBottom: 4 }}>✕ REJECTION REASON</div>
@@ -483,8 +520,11 @@ export default function TicketDetailPage() {
                           </a>
                           <span className="attachment-size">{formatFileSize(att.fileSize)} · {att.uploadedBy}</span>
                         </div>
-                        <button className="btn btn-ghost btn-sm" style={{ color: 'var(--danger)' }}
-                          onClick={() => handleDeleteAttachment(att.id)}>✕</button>
+                        {/* Only uploader or admin can delete */}
+                        {(isAdmin || att.uploadedBy === currentUser) && (
+                          <button className="btn btn-ghost btn-sm" style={{ color: 'var(--danger)' }}
+                            onClick={() => handleDeleteAttachment(att.id)}>✕</button>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -522,12 +562,17 @@ export default function TicketDetailPage() {
                 <div className="comment-list">
                   {(ticket.comments || []).map(c => (
                     <div key={c.id} className="comment-item">
-                      <div className={`comment-avatar ${c.commentedBy === 'admin' ? 'admin' : ''}`}>
+                      <div className={`comment-avatar ${c.commentedBy === currentUser ? 'own' : (isAdmin && c.commentedBy !== ticket.reportedBy ? 'admin' : '')}`}>
                         {c.commentedBy?.charAt(0).toUpperCase() || '?'}
                       </div>
                       <div className={`comment-bubble ${c.commentedBy === currentUser ? 'own' : ''}`}>
                         <div className="comment-author">
                           {c.commentedBy}
+                          {c.commentedBy === currentUser && (
+                            <span style={{ fontWeight: 400, fontSize: 10, color: 'var(--text-light)', marginLeft: 4 }}>
+                              (you)
+                            </span>
+                          )}
                           {c.isEdited && <span style={{ fontWeight: 400, fontSize: 10, color: 'var(--text-light)' }}>(edited)</span>}
                           <span className="comment-time">
                             {new Date(c.createdAt).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
@@ -549,12 +594,14 @@ export default function TicketDetailPage() {
                         ) : (
                           <>
                             <p className="comment-text">{c.comment}</p>
-                            <div className="comment-actions">
-                              <button className="btn btn-ghost btn-sm" style={{ fontSize: 11, padding: '2px 6px' }}
-                                onClick={() => setEditingComment({ id: c.id, text: c.comment })}>✏️ Edit</button>
-                              <button className="btn btn-ghost btn-sm" style={{ fontSize: 11, padding: '2px 6px', color: 'var(--danger)' }}
-                                onClick={() => handleDeleteComment(c.id)}>🗑 Delete</button>
-                            </div>
+                            {canModifyComment(c) && (
+                              <div className="comment-actions">
+                                <button className="btn btn-ghost btn-sm" style={{ fontSize: 11, padding: '2px 6px' }}
+                                  onClick={() => setEditingComment({ id: c.id, text: c.comment })}>✏️ Edit</button>
+                                <button className="btn btn-ghost btn-sm" style={{ fontSize: 11, padding: '2px 6px', color: 'var(--danger)' }}
+                                  onClick={() => handleDeleteComment(c.id)}>🗑 Delete</button>
+                              </div>
+                            )}
                           </>
                         )}
                       </div>
@@ -562,17 +609,13 @@ export default function TicketDetailPage() {
                   ))}
                 </div>
 
-                {/* Add comment form */}
+                {/* Add comment — using real logged-in user, no manual name input */}
                 {!['CLOSED', 'REJECTED'].includes(ticket.status) && (
                   <div className="comment-add-form">
                     <div style={{ flex: 1 }}>
-                      <input
-                        type="text"
-                        placeholder="Your name or email"
-                        value={commentAuthor}
-                        onChange={e => setCommentAuthor(e.target.value)}
-                        style={{ width: '100%', padding: '6px 10px', border: '1.5px solid var(--border)', borderRadius: 8, marginBottom: 6, fontSize: 13, outline: 'none', boxSizing: 'border-box', fontFamily: 'inherit' }}
-                      />
+                      <div style={{ fontSize: 12, color: 'var(--text-light)', marginBottom: 6 }}>
+                        Commenting as <strong style={{ color: 'var(--sliit-blue)' }}>{currentUser}</strong>
+                      </div>
                       <textarea
                         placeholder="Add a comment or update..."
                         value={commentText}
@@ -584,7 +627,7 @@ export default function TicketDetailPage() {
                       className="btn btn-primary"
                       style={{ alignSelf: 'flex-end' }}
                       onClick={handleAddComment}
-                      disabled={commentLoading || !commentText.trim() || !commentAuthor.trim()}
+                      disabled={commentLoading || !commentText.trim()}
                     >
                       {commentLoading ? '⏳' : 'Post'}
                     </button>
@@ -599,36 +642,17 @@ export default function TicketDetailPage() {
           ════════════════════════════════════════════════════════════ */}
           <div>
 
-            {/* Role toggle — remove when Module E OAuth integrated */}
-            <div className="detail-card" style={{ marginBottom: 12 }}>
-              <div className="detail-card-body" style={{ padding: '12px 16px' }}>
-                <div style={{ fontSize: 11, color: 'var(--text-light)', marginBottom: 6, fontWeight: 600, textTransform: 'uppercase' }}>
-                  View As
-                </div>
-                <div className="role-toggle">
-                  <button className={`role-btn ${role === 'USER' ? 'active' : ''}`} onClick={() => setRole('USER')}>
-                    👤 User
-                  </button>
-                  <button className={`role-btn ${role === 'ADMIN' ? 'active' : ''}`} onClick={() => setRole('ADMIN')}>
-                    🛡 Admin
-                  </button>
-                </div>
-                <div style={{ fontSize: 11, color: 'var(--text-light)', marginTop: 6 }}>
-                  {role === 'ADMIN'
-                    ? 'Admin: can change status, assign technicians'
-                    : 'User: can view, comment and rate the technician'}
-                </div>
-              </div>
-            </div>
-
-            {/* ── ADMIN ONLY SECTION ───────────────────────────────── */}
-            {role === 'ADMIN' && (
+            {/* ── ADMIN-ONLY SECTION ───────────────────────────────── */}
+            {isAdmin && (
               <>
                 {/* Status action buttons */}
                 {availableActions.length > 0 && (
                   <div className="detail-card" style={{ marginBottom: 12 }}>
                     <div className="detail-card-header">⚡ Change Status</div>
                     <div className="detail-card-body">
+                      <div style={{ fontSize: 11, color: 'var(--text-light)', marginBottom: 8 }}>
+                        Acting as <strong>{user?.name || user?.email}</strong> (Admin)
+                      </div>
                       <div className="status-actions">
                         {availableActions.map(action => (
                           <button
@@ -645,7 +669,7 @@ export default function TicketDetailPage() {
                   </div>
                 )}
 
-                {/* Assign Technician — uses TechnicianAssignPanel */}
+                {/* Assign Technician */}
                 {!['CLOSED', 'REJECTED', 'RESOLVED'].includes(ticket.status) && (
                   <div className="detail-card" style={{ marginBottom: 12 }}>
                     <div className="detail-card-header">
@@ -669,8 +693,8 @@ export default function TicketDetailPage() {
                   </div>
                 )}
 
-                {/* Danger zone — admin only */}
-                <div className="detail-card">
+                {/* Danger zone */}
+                <div className="detail-card" style={{ marginBottom: 12 }}>
                   <div className="detail-card-header" style={{ color: 'var(--danger)' }}>⚠️ Danger Zone</div>
                   <div className="detail-card-body">
                     <p style={{ fontSize: 12, color: 'var(--text-light)', marginBottom: 10 }}>
@@ -685,14 +709,11 @@ export default function TicketDetailPage() {
               </>
             )}
 
-            {/* ── Rate Technician — visible to BOTH USER and ADMIN ─────
-                Shows when ticket is RESOLVED and has an assigned technician
-                Disappears after rating is submitted                      */}
+            {/* ── Rate Technician — USER & ADMIN both see this ──────── */}
             {['RESOLVED', 'CLOSED'].includes(ticket.status) && ticket.assignedTo && !alreadyRated && (
-              <div className="detail-card" style={{ marginTop: 12 }}>
+              <div className="detail-card" style={{ marginBottom: 12 }}>
                 <div className="detail-card-header">⭐ Rate the Technician</div>
                 <div className="detail-card-body">
-                  {/* Technician info */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12, padding: '10px 12px', background: '#f8f9fa', borderRadius: 8, border: '1px solid var(--border)' }}>
                     <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'linear-gradient(135deg, var(--sliit-blue), var(--sliit-dark))', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: 14, flexShrink: 0 }}>
                       {ticket.assignedTo?.charAt(0).toUpperCase()}
@@ -702,7 +723,6 @@ export default function TicketDetailPage() {
                       <div style={{ fontSize: 11, color: 'var(--text-light)' }}>Assigned technician</div>
                     </div>
                   </div>
-
                   <p style={{ fontSize: 13, color: 'var(--text-light)', marginBottom: 12, lineHeight: 1.5 }}>
                     The issue has been resolved. How satisfied are you with the work done?
                   </p>
@@ -717,9 +737,8 @@ export default function TicketDetailPage() {
               </div>
             )}
 
-            {/* Already rated confirmation */}
             {alreadyRated && ticket.assignedTo && (
-              <div className="detail-card" style={{ marginTop: 12 }}>
+              <div className="detail-card" style={{ marginBottom: 12 }}>
                 <div className="detail-card-body">
                   <div style={{ textAlign: 'center', padding: '10px 0', color: 'var(--success)' }}>
                     <div style={{ fontSize: 24, marginBottom: 6 }}>⭐</div>
@@ -730,8 +749,8 @@ export default function TicketDetailPage() {
               </div>
             )}
 
-            {/* ── Summary (visible to both USER and ADMIN) ──────────── */}
-            <div className="detail-card" style={{ marginTop: role === 'ADMIN' ? 12 : 0 }}>
+            {/* ── Summary (always visible) ──────────────────────────── */}
+            <div className="detail-card">
               <div className="detail-card-header">📊 Summary</div>
               <div className="detail-card-body">
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 13 }}>
