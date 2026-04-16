@@ -129,6 +129,12 @@ export default function BookingsPage() {
     if (!form.startTime || !form.endTime) { toast.error("Please select start and end times"); return; }
     if (new Date(form.endTime) <= new Date(form.startTime)) { toast.error("End time must be after start time"); return; }
     if (!form.purpose.trim()) { toast.error("Please enter the purpose of booking"); return; }
+
+    if (selectedResource?.capacity && parseInt(form.attendees) > selectedResource.capacity) {
+    toast.error(`Attendees (${form.attendees}) exceeds room capacity (${selectedResource.capacity})`);
+    return;
+  }
+
     setSubmitting(true);
     try {
       await axios.post(`${API}/bookings`, { ...form, attendees: parseInt(form.attendees) || 1 });

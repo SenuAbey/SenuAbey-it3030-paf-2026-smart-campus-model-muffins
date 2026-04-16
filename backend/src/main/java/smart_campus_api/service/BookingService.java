@@ -32,6 +32,15 @@ public class BookingService {
             throw new RuntimeException("Resource is not available for booking");
         }
 
+        //  Step 2.5: Check capacity
+        if (dto.getAttendees() != null && resource.getCapacity() != null
+                && dto.getAttendees() > resource.getCapacity()) {
+            throw new RuntimeException(
+                    "Number of attendees (" + dto.getAttendees() + ") exceeds resource capacity (" + resource.getCapacity() + ")"
+            );
+        }
+
+
         // 3. Check for scheduling conflicts
         List<Booking> conflicts = bookingRepository.findConflictingBookings(
                 dto.getResourceId(), dto.getStartTime(), dto.getEndTime()
