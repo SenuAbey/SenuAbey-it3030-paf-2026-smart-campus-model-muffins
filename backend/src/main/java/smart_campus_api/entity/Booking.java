@@ -16,9 +16,13 @@ public class Booking {
     @JoinColumn(name = "resource_id", nullable = false)
     private Resource resource;
 
-    private String bookedBy; // user email
+    @Column(name = "booked_by")
+    private String bookedBy;
 
+    @Column(name = "start_time")
     private LocalDateTime startTime;
+
+    @Column(name = "end_time")
     private LocalDateTime endTime;
 
     private String purpose;
@@ -27,9 +31,13 @@ public class Booking {
     @Enumerated(EnumType.STRING)
     private BookingStatus status = BookingStatus.PENDING;
 
+    @Column(name = "rejection_reason")
     private String rejectionReason;
 
+    @Column(name = "created_at")
     private LocalDateTime createdAt;
+
+    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
     @PrePersist
@@ -42,6 +50,7 @@ public class Booking {
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
+
 
     // Getters and Setters
     public Long getId() { return id; }
