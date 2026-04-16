@@ -110,7 +110,7 @@ export default function BookingsPage() {
   });
 
   useEffect(() => {
-    axios.get(`${API}/resources`).then(r => setResources(r.data.content || r.data)).catch(() => {});
+    axios.get(`${API}/resources?size=100`).then(r => setResources(r.data.content || r.data)).catch(() => {});
     fetchMyBookings();
   }, []);
 
@@ -244,12 +244,24 @@ export default function BookingsPage() {
 
                 <div>
                   <label className="form-label">Resource *</label>
-                  <select value={form.resourceId} onChange={e => setForm(f => ({ ...f, resourceId: e.target.value }))} className="form-input">
-                    <option value="">— Select a resource —</option>
-                    {resources.filter(r => r.status === "ACTIVE").map(r => (
-                      <option key={r.id} value={r.id}>{r.name} ({r.type?.replace(/_/g, " ")})</option>
-                    ))}
-                  </select>
+                  <select
+                      value={form.resourceId}
+                      onChange={e => setForm(f => ({ ...f, resourceId: e.target.value }))}
+                      className="form-input"
+                    >
+                      <option value="">— Select a resource —</option>
+
+                      {resources.map(r => (
+                        <option
+                          key={r.id}
+                          value={r.id}
+                          disabled={r.status !== "ACTIVE"}
+                        >
+                          {r.name} ({r.type?.replace(/_/g, " ")})
+                          {r.status !== "ACTIVE" ? ` — ${r.status}` : ""}
+                        </option>
+                      ))}
+                    </select>
                 </div>
 
                 <div>
