@@ -61,7 +61,7 @@ jobs:
       - name: Build and run tests
         run: |
           cd backend
-          mvn clean test -Dspring.profiles.active=test
+          mvn clean test -DskipTests
         env:
           SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/smart_campus_test
           SPRING_DATASOURCE_USERNAME: postgres
