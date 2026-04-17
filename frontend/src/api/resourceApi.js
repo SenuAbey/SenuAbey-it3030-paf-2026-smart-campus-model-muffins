@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { useAuthStore } from '../store/authStore';
 
 const BASE = 'http://localhost:8081/api/v1';
 
@@ -7,6 +8,19 @@ const api = axios.create({
     headers: {
         'Content-Type': 'application/json'
     }
+});
+
+/**
+ * Attach the JWT token from authStore to every request.
+ * This is required because the main branch's SecurityConfig enforces
+ * authentication on all POST/PUT/PATCH/DELETE and booking GET endpoints.
+ */
+api.interceptors.request.use(config => {
+    const token = useAuthStore.getState().token;
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
 });
 
 export const getResources = (params) => api.get('/resources', { params });

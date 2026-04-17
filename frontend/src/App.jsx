@@ -5,6 +5,8 @@ import ResourceDetailPage from './pages/ResourceDetailPage';
 import ResourceGroupPage from './pages/ResourceGroupPage';
 import LoginPage from './pages/LoginPage';
 import AuthCallback from './pages/AuthCallback';
+import BookingsPage from './pages/bookings/BookingsPage';
+import AdminBookingsPage from './pages/bookings/AdminBookingsPage';
 import { useAuthStore } from './store/authStore';
 import { getMe } from './api/authApi';
 import './global.css';
@@ -23,7 +25,9 @@ function ProtectedRoute({ children }) {
 }
 
 function App() {
-  const { token, setUser, user } = useAuthStore();
+  const { token, setUser } = useAuthStore();
+  // Role comes from the JWT user object returned by /auth/me.
+  // Use 'USER' (not 'STUDENT') to match the role strings from the backend.
   const [role, setRole] = useState('USER');
   const [loading, setLoading] = useState(true);
 
@@ -60,7 +64,7 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
 
-          {/* Protected routes */}
+          {/* Protected routes — catalogue & resources */}
           <Route path="/" element={
             <ProtectedRoute><CataloguePage /></ProtectedRoute>
           } />
@@ -70,6 +74,16 @@ function App() {
           <Route path="/resource-groups" element={
             <ProtectedRoute><ResourceGroupPage /></ProtectedRoute>
           } />
+
+          {/* Protected routes — bookings (added from feature branch) */}
+          <Route path="/bookings" element={
+            <ProtectedRoute><BookingsPage /></ProtectedRoute>
+          } />
+          <Route path="/admin/bookings" element={
+            <ProtectedRoute><AdminBookingsPage /></ProtectedRoute>
+          } />
+
+          {/* Protected routes — tickets */}
           <Route path="/tickets" element={
             <ProtectedRoute><TicketsPage /></ProtectedRoute>
           } />
