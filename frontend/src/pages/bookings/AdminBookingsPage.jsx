@@ -133,7 +133,7 @@ export default function AdminBookingsPage() {
           ))}
         </div>
 
-        {/* Toolbar */}
+        {/* Toolbar ---*/}
         <div style={{ display: "flex", gap: "12px", marginBottom: "20px", flexWrap: "wrap", alignItems: "center" }}>
           <input
             placeholder="Search resource, user, purpose..."
