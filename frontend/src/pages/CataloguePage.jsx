@@ -192,8 +192,8 @@ export default function CataloguePage() {
 
           {/* Role Toggle */}
           <div className="role-toggle">
-            <button className={`role-btn ${role === "STUDENT" ? "active" : ""}`} onClick={() => setRole("STUDENT")}>
-              👤 Student
+            <button className={`role-btn ${role === "USER" ? "active" : ""}`} onClick={() => setRole("USER")}>
+              👤 User
             </button>
             <button className={`role-btn ${role === "ADMIN" ? "active" : ""}`} onClick={() => setRole("ADMIN")}>
               ⚙️ Admin
@@ -212,6 +212,9 @@ export default function CataloguePage() {
           {/* Admin-only nav buttons */}
           {isAdmin && (
             <>
+              <button className="btn btn-secondary" onClick={() => navigate("/technicians")}>
+                👷 Manage Technicians
+              </button>
               <button className="btn btn-secondary" onClick={() => navigate("/admin/bookings")}>
                 📋 Manage Bookings
               </button>
@@ -222,7 +225,7 @@ export default function CataloguePage() {
             </>
           )}
 
-          {/* Student-only nav button */}
+          {/* Non-admin nav button */}
           {!isAdmin && (
             <button className="btn btn-secondary" onClick={() => navigate("/bookings")}>
               📅 My Bookings
@@ -389,7 +392,6 @@ export default function CataloguePage() {
                         </span>
                       </div>
 
-                      {/* Admin only actions */}
                       {isAdmin && (
                         <div style={{ display: "flex", gap: "6px", marginTop: "12px" }}>
                           <button onClick={(e) => openEditModal(r, e)} className="btn btn-secondary" style={{ flex: 1, fontSize: "12px", padding: "5px" }}>Edit</button>
@@ -401,7 +403,6 @@ export default function CataloguePage() {
                         </div>
                       )}
 
-                      {/* Student view */}
                       {!isAdmin && r.status === "ACTIVE" && (
                         <button onClick={(e) => { e.stopPropagation(); navigate(`/resources/${r.id}`); }}
                           className="btn btn-primary" style={{ width: "100%", marginTop: "12px" }}>
@@ -427,7 +428,6 @@ export default function CataloguePage() {
         © 2026 Smart Campus Operations Hub
       </footer>
 
-      {/* Modal - Admin only */}
       {showModal && isAdmin && (
         <div className="modal-overlay">
           <div className="modal">

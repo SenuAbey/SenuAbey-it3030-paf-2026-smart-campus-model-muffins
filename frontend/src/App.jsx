@@ -7,8 +7,8 @@ import LoginPage from './pages/LoginPage';
 import AuthCallback from './pages/AuthCallback';
 import { useAuthStore } from './store/authStore';
 import { getMe } from './api/authApi';
-import BookingsPage from "./pages/bookings/BookingsPage";
-import AdminBookingsPage from "./pages/bookings/AdminBookingsPage";
+import BookingsPage from './pages/bookings/BookingsPage';
+import AdminBookingsPage from './pages/bookings/AdminBookingsPage';
 import TicketsPage from './pages/TicketsPage';
 import TicketDetailPage from './pages/TicketDetailPage';
 import CreateTicketPage from './pages/CreateTicketPage';
@@ -25,7 +25,7 @@ function ProtectedRoute({ children }) {
 }
 
 function App() {
-  const { token, setUser, user } = useAuthStore();
+  const { token, setUser } = useAuthStore();
   const [role, setRole] = useState('USER');
   const [loading, setLoading] = useState(true);
 
@@ -62,7 +62,7 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
 
-          {/* Protected routes */}
+          {/* Protected routes — catalogue & resources */}
           <Route path="/" element={
             <ProtectedRoute><CataloguePage /></ProtectedRoute>
           } />
@@ -72,12 +72,16 @@ function App() {
           <Route path="/resource-groups" element={
             <ProtectedRoute><ResourceGroupPage /></ProtectedRoute>
           } />
+
+          {/* Protected routes — bookings */}
           <Route path="/bookings" element={
             <ProtectedRoute><BookingsPage /></ProtectedRoute>
           } />
           <Route path="/admin/bookings" element={
             <ProtectedRoute><AdminBookingsPage /></ProtectedRoute>
           } />
+
+          {/* Protected routes — tickets */}
           <Route path="/tickets" element={
             <ProtectedRoute><TicketsPage /></ProtectedRoute>
           } />

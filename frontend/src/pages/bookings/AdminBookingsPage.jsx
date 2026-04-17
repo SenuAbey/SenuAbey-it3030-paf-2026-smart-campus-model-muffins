@@ -3,8 +3,14 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import toast, { Toaster } from "react-hot-toast";
 import { RoleContext } from "../../App";
+import { useAuthStore } from "../../store/authStore";
 
 const API = "http://localhost:8081/api/v1";
+
+function authConfig() {
+  const token = useAuthStore.getState().token;
+  return token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+}
 
 const STATUS_META = {
   PENDING:   { color: "#BA7517", bg: "#FFF8EC", label: "Pending",   icon: "⏳" },
@@ -25,13 +31,14 @@ function StatusBadge({ status }) {
 
 export default function AdminBookingsPage() {
   const navigate = useNavigate();
+  // FIX: role values from JWT are 'USER' / 'ADMIN', not 'STUDENT' / 'ADMIN'
   const { role } = useContext(RoleContext);
 
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(false);
   const [filterStatus, setFilterStatus] = useState("PENDING");
   const [searchQuery, setSearchQuery] = useState("");
-  const [rejectModal, setRejectModal] = useState(null); // booking id
+  const [rejectModal, setRejectModal] = useState(null);
   const [rejectReason, setRejectReason] = useState("");
   const [processingId, setProcessingId] = useState(null);
 
@@ -40,7 +47,7 @@ export default function AdminBookingsPage() {
   const fetchAll = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`${API}/bookings`);
+      const res = await axios.get(`${API}/bookings`, authConfig());
       setBookings(res.data);
     } catch {
       toast.error("Failed to load bookings");
@@ -50,7 +57,7 @@ export default function AdminBookingsPage() {
   const approve = async (id) => {
     setProcessingId(id);
     try {
-      await axios.patch(`${API}/bookings/${id}/approve`);
+      await axios.patch(`${API}/bookings/${id}/approve`, {}, authConfig());
       toast.success("Booking approved!");
       fetchAll();
     } catch (err) {
@@ -62,7 +69,7 @@ export default function AdminBookingsPage() {
     if (!rejectReason.trim()) { toast.error("Please provide a rejection reason"); return; }
     setProcessingId(rejectModal);
     try {
-      await axios.patch(`${API}/bookings/${rejectModal}/reject`, { reason: rejectReason });
+      await axios.patch(`${API}/bookings/${rejectModal}/reject`, { reason: rejectReason }, authConfig());
       toast.success("Booking rejected");
       setRejectModal(null);
       setRejectReason("");
@@ -133,7 +140,7 @@ export default function AdminBookingsPage() {
           ))}
         </div>
 
-        {/* Toolbar ---*/}
+        {/* Toolbar */}
         <div style={{ display: "flex", gap: "12px", marginBottom: "20px", flexWrap: "wrap", alignItems: "center" }}>
           <input
             placeholder="Search resource, user, purpose..."
@@ -175,7 +182,6 @@ export default function AdminBookingsPage() {
           </div>
         ) : (
           <div style={{ background: "#fff", borderRadius: "12px", border: "1px solid #eee", overflow: "hidden", boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
-            {/* Table header */}
             <div style={{
               display: "grid",
               gridTemplateColumns: "2fr 1.5fr 1.8fr 1.8fr 80px 80px 160px",
@@ -276,7 +282,7 @@ export default function AdminBookingsPage() {
             <textarea
               value={rejectReason}
               onChange={e => setRejectReason(e.target.value)}
-              placeholder="e.g. Resource not available for this time slot, conflicting event scheduled..."
+              placeholder="e.g. Resource not available for this time slot..."
               rows={3}
               className="form-input"
               style={{ resize: "vertical", fontSize: "13px", padding: "10px 12px" }}
