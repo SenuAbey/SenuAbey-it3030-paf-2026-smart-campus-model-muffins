@@ -4,6 +4,7 @@ import { getResources, deleteResource, updateResourceStatus, getResourceStats } 
 import useResourceStore from "../store/resourceStore";
 import toast, { Toaster } from "react-hot-toast";
 import { RoleContext } from "../App";
+import { useAuthStore } from '../store/authStore';
 
 const BASE = "http://localhost:8081/api/v1";
 
@@ -40,6 +41,7 @@ export default function CataloguePage() {
   const navigate = useNavigate();
   const { role, setRole } = useContext(RoleContext);
   const { filters, setFilters, resetFilters } = useResourceStore();
+  const { logoutUser, user } = useAuthStore();
   const [view, setView] = useState("categories");
   const [selectedType, setSelectedType] = useState(null);
   const [resources, setResources] = useState([]);
@@ -187,17 +189,15 @@ export default function CataloguePage() {
           UNI <span>Campus Hub</span>
         </div>
         <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-          {/* Role Toggle — Member 1's original logic */}
-          <div className="role-toggle">
-            <button className={`role-btn ${role === "STUDENT" ? "active" : ""}`} onClick={() => setRole("STUDENT")}>
-              👤 Student
-            </button>
-            <button className={`role-btn ${role === "ADMIN" ? "active" : ""}`} onClick={() => setRole("ADMIN")}>
-              ⚙️ Admin
-            </button>
-          </div>
+          {/* Tickets navigation button — navigates to Member 3's module */}
+          <button
+            className="btn btn-secondary"
+            onClick={() => navigate("/tickets")}
+            style={{ background: '#E87722', color: '#fff', border: 'none' }}
+          >
+            🔧 Incident Tickets
+          </button>
 
-          {/* Admin-only nav buttons */}
           {isAdmin && (
             <>
               <button className="btn btn-secondary" onClick={() => navigate("/admin/bookings")}>
@@ -210,12 +210,25 @@ export default function CataloguePage() {
             </>
           )}
 
-          {/* Student-only nav button */}
-          {!isAdmin && (
-            <button className="btn btn-secondary" onClick={() => navigate("/bookings")}>
-              📅 My Bookings
+          {/* User info + logout */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {user?.profilePicture && (
+              <img src={user.profilePicture} alt="avatar"
+                style={{ width: 32, height: 32, borderRadius: '50%', border: '2px solid #fff' }} />
+            )}
+            <span style={{ color: '#fff', fontSize: 13 }}>{user?.name || user?.email}</span>
+            <span style={{
+              background: role === 'ADMIN' ? '#E87722' : '#1D9E75',
+              color: '#fff', fontSize: 11, padding: '2px 8px', borderRadius: 4, fontWeight: 700
+            }}>{role}</span>
+            <button
+              className="btn"
+              style={{ background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', fontSize: 12 }}
+              onClick={() => { logoutUser(); navigate('/login'); }}
+            >
+              Logout
             </button>
-          )}
+          </div>
         </div>
       </header>
 
