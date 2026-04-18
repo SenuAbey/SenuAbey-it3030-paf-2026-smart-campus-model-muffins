@@ -435,7 +435,6 @@ export default function BookingsPage() {
           </div>
         )}
       </div>
-
       <footer className="app-footer">© 2026 Smart Campus Operations Hub</footer>
     </div>
   );

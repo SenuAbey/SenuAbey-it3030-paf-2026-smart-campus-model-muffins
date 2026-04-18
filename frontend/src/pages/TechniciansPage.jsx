@@ -265,27 +265,25 @@ export default function TechniciansPage() {
       <AppHeader />
 
       <div className="app-banner" style={{
-        backgroundImage: "linear-gradient(rgba(0,51,102,0.88), rgba(0,83,160,0.88)), url('https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=1200&q=80')",
+        backgroundImage: "linear-gradient(rgba(0,51,102,0.88), rgba(0,83,160,0.88)), url('https://images.unsplash.com/photo-1621905251918-48416bd8575a?w=1200&q=80')",
       }}>
         <div style={{ fontSize: '12px', opacity: 0.7, marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
           Smart Campus Operations Hub
         </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 12 }}>
-          <div>
-            <h1 style={{ fontSize: '36px', fontWeight: '300', margin: '0 0 8px', color: '#fff' }}>
-              Technician <strong style={{ fontWeight: '800' }}>Management</strong>
-            </h1>
-            <p style={{ opacity: 0.8, margin: 0, fontSize: '15px', color: '#fff' }}>
-              Manage technician profiles, specializations, workload and ratings
-            </p>
-          </div>
-          <button className="btn btn-primary" style={{ background: '#E87722', border: 'none' }} onClick={() => { setEditTech(null); setShowForm(true); }}>
-            + Add Technician
-          </button>
-        </div>
+        <h1 style={{ fontSize: '36px', fontWeight: '300', margin: '0 0 8px', color: '#fff' }}>
+          Technician <strong style={{ fontWeight: '800' }}>Management</strong>
+        </h1>
+        <p style={{ opacity: 0.8, margin: 0, fontSize: '15px', color: '#fff' }}>
+          Manage technician profiles, specializations, workload and ratings
+        </p>
       </div>
 
       <div className="page-content">
+        <div style={{ display: 'flex', gap: 10, marginBottom: '1.25rem', flexWrap: 'wrap' }}>
+          <button className="btn btn-orange" onClick={() => { setEditTech(null); setShowForm(true); }}>
+            + Add Technician
+          </button>
+        </div>
         {/* Summary stats */}
         <div className="stats-bar" style={{ marginBottom: '1.25rem' }}>
           <div className="stat-card">
@@ -418,6 +416,9 @@ export default function TechniciansPage() {
           </div>
         )}
       </div>
+      <footer className="app-footer">
+        © 2026 Smart Campus Operations Hub
+      </footer>
     </div>
   );
 }

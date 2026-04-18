@@ -274,6 +274,9 @@ export default function CreateTicketPage() {
           </div>
         </div>
       </div>
+      <footer className="app-footer">
+        © 2026 Smart Campus Operations Hub
+      </footer>
     </div>
   );
 }

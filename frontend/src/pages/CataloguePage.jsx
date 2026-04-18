@@ -6,6 +6,7 @@ import toast, { Toaster } from "react-hot-toast";
 import { RoleContext } from "../App";
 import { useAuthStore } from "../store/authStore";
 import AppHeader from "../components/AppHeader";
+import "./tickets.css";
 
 const BASE = "http://localhost:8081/api/v1";
 
@@ -186,19 +187,11 @@ export default function CataloguePage() {
       <Toaster position="top-right" />
 
       {/* ── Header ──────────────────────────────────────────────────────── */}
-      <AppHeader
-        extraNavButtons={
-          isAdmin && (
-            <button className="btn btn-primary" onClick={openAddModal}>
-              + Add Resource
-            </button>
-          )
-        }
-      />
+      <AppHeader />
 
       {/* ── Banner ──────────────────────────────────────────────────────── */}
       <div className="app-banner" style={{
-        backgroundImage: "linear-gradient(rgba(0,51,102,0.88), rgba(0,83,160,0.88)), url('https://images.unsplash.com/photo-1541339907198-e08756ebafe3?w=1200&q=80')"
+        backgroundImage: "linear-gradient(rgba(0,51,102,0.88), rgba(0,83,160,0.88)), url('https://images.unsplash.com/photo-1497366216548-37526070297c?w=1200&q=80')"
       }}>
         {view === "categories" ? (
           <>
@@ -229,6 +222,15 @@ export default function CataloguePage() {
       </div>
 
       <div style={{ maxWidth: "1400px", margin: "0 auto", padding: "30px 20px" }}>
+
+        {/* ── Add Resource Button (Admin only) — mirroring New Ticket pattern ── */}
+        {isAdmin && (
+          <div style={{ display: "flex", gap: 10, marginBottom: "1.25rem", flexWrap: "wrap" }}>
+            <button className="btn btn-orange" onClick={openAddModal}>
+              + Add Resource
+            </button>
+          </div>
+        )}
 
         {/* Stats — Admin only */}
         {view === "categories" && isAdmin && stats && (

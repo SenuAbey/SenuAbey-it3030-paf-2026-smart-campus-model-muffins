@@ -159,7 +159,7 @@ export default function TicketsPage() {
 
       {/* ── Blue banner matching CataloguePage ──────────────────────────── */}
       <div className="app-banner" style={{
-        backgroundImage: "linear-gradient(rgba(0,51,102,0.88), rgba(0,83,160,0.88)), url('https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=1200&q=80')",
+        backgroundImage: "linear-gradient(rgba(0,51,102,0.88), rgba(0,83,160,0.88)), url('https://images.unsplash.com/photo-1603126857599-f6e157fa2fe6?w=1200&q=80')",
       }}>
         <div style={{ fontSize: '12px', opacity: 0.7, marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
           Smart Campus Operations Hub
@@ -330,6 +330,9 @@ export default function TicketsPage() {
           </>
         )}
       </div>
+      <footer className="app-footer">
+        © 2026 Smart Campus Operations Hub
+      </footer>
     </div>
   );
 }

@@ -378,7 +378,7 @@ export default function TicketDetailPage() {
 
       {/* ── Blue banner ─────────────────────────────────────────────────── */}
       <div className="app-banner" style={{
-        backgroundImage: "linear-gradient(rgba(0,51,102,0.88), rgba(0,83,160,0.88)), url('https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=1200&q=80')",
+        backgroundImage: "linear-gradient(rgba(0,51,102,0.88), rgba(0,83,160,0.88)), url('https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=1200&q=80')",
         padding: '28px 5%',
       }}>
         <div style={{ fontSize: '12px', opacity: 0.7, marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#fff' }}>
@@ -755,6 +755,9 @@ export default function TicketDetailPage() {
           {/* end right column */}
         </div>
       </div>
+      <footer className="app-footer">
+        © 2026 Smart Campus Operations Hub
+      </footer>
     </div>
   );
 }

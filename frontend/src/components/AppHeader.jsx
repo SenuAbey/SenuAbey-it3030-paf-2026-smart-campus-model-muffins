@@ -18,9 +18,9 @@ export default function AppHeader({ extraNavButtons }) {
   const isActive = (path) =>
     path === '/' ? location.pathname === '/' : location.pathname.startsWith(path);
 
-  const navBtn = (path, filledBg) => {
+  const navBtn = (path) => {
     const active = isActive(path);
-    const base = {
+    return {
       padding: '0 18px',
       height: 48,
       fontSize: 13,
@@ -33,19 +33,8 @@ export default function AppHeader({ extraNavButtons }) {
       display: 'flex',
       alignItems: 'center',
       gap: 5,
-    };
-    if (filledBg) {
-      return {
-        ...base,
-        background: active ? filledBg : 'transparent',
-        color: active ? '#fff' : filledBg,
-        borderBottom: active ? `3px solid ${filledBg}` : '3px solid transparent',
-      };
-    }
-    return {
-      ...base,
-      background: 'transparent',
-      color: active ? '#fff' : 'rgba(255,255,255,0.78)',
+      background: active ? 'rgba(243,146,0,0.18)' : 'transparent',
+      color: '#fff',
       borderBottom: active ? '3px solid #F39200' : '3px solid transparent',
     };
   };
@@ -161,8 +150,8 @@ export default function AppHeader({ extraNavButtons }) {
         zIndex: 100,
         boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
       }}>
-        <button style={navBtn('/', '#0053A0')} onClick={() => navigate('/')}>🏛 Catalogue</button>
-        <button style={navBtn('/tickets', '#E87722')} onClick={() => navigate('/tickets')}>🔧 Tickets</button>
+        <button style={navBtn('/')} onClick={() => navigate('/')}>🏛 Catalogue</button>
+        <button style={navBtn('/tickets')} onClick={() => navigate('/tickets')}>🔧 Tickets</button>
 
         {isAdmin && (
           <>

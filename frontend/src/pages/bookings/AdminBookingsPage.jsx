@@ -251,9 +251,7 @@ export default function AdminBookingsPage() {
         )}
       </div>
 
-      <footer style={{ background: "#fff", borderTop: "4px solid var(--sliit-orange)", padding: "20px", textAlign: "center", fontSize: "12px", color: "#aaa", marginTop: "40px" }}>
-        © 2026 Smart Campus Operations Hub — Admin Booking Management
-      </footer>
+
 
       {/* Reject Modal */}
       {rejectModal && (
@@ -288,6 +286,9 @@ export default function AdminBookingsPage() {
           </div>
         </div>
       )}
+      <footer className="app-footer">
+        © 2026 Smart Campus Operations Hub
+      </footer>
     </div>
   );
 }

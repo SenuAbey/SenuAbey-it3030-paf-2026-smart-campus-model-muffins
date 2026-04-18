@@ -133,7 +133,7 @@ export default function TicketStatsPage() {
       <AppHeader />
 
       <div className="app-banner" style={{
-        backgroundImage: "linear-gradient(rgba(0,51,102,0.88), rgba(0,83,160,0.88)), url('https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=1200&q=80')",
+        backgroundImage: "linear-gradient(rgba(0,51,102,0.88), rgba(0,83,160,0.88)), url('https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=1200&q=80')",
       }}>
         <div style={{ fontSize: '12px', opacity: 0.7, marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
           Smart Campus Operations Hub
@@ -216,6 +216,9 @@ export default function TicketStatsPage() {
           </>
         )}
       </div>
+      <footer className="app-footer">
+        © 2026 Smart Campus Operations Hub
+      </footer>
     </div>
   );
 }
