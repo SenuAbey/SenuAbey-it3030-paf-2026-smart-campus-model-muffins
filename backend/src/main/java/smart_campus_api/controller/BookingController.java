@@ -11,6 +11,12 @@ import smart_campus_api.service.BookingService;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Booking endpoints.
+ * NOTE: @CrossOrigin is intentionally removed here.
+ * CORS is handled globally in SecurityConfig.corsConfigurationSource()
+ * and WebConfig.addCorsMappings(), which already allow localhost:5173/5174.
+ */
 @RestController
 @RequestMapping("/api/v1/bookings")
 public class BookingController {
@@ -20,8 +26,7 @@ public class BookingController {
 
     @PostMapping
     public ResponseEntity<BookingResponseDTO> createBooking(@RequestBody BookingRequestDTO dto) {
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(bookingService.createBooking(dto));
+        return ResponseEntity.status(HttpStatus.CREATED).body(bookingService.createBooking(dto));
     }
 
     @GetMapping
@@ -48,9 +53,7 @@ public class BookingController {
     public ResponseEntity<BookingResponseDTO> rejectBooking(
             @PathVariable Long id,
             @RequestBody Map<String, String> body) {
-        return ResponseEntity.ok(
-                bookingService.rejectBooking(id, body.get("reason"))
-        );
+        return ResponseEntity.ok(bookingService.rejectBooking(id, body.get("reason")));
     }
 
     @PatchMapping("/{id}/cancel")

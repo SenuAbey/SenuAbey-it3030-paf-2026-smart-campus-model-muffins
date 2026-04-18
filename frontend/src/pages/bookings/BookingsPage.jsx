@@ -3,8 +3,18 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 import toast, { Toaster } from "react-hot-toast";
 import { RoleContext } from "../../App";
+import { useAuthStore } from "../../store/authStore";
 
 const API = "http://localhost:8081/api/v1";
+
+/**
+ * Returns axios config with JWT Authorization header.
+ * Called as a plain function (not a hook) so it's safe inside event handlers.
+ */
+function authConfig() {
+  const token = useAuthStore.getState().token;
+  return token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+}
 
 const STATUS_META = {
   PENDING:   { color: "#BA7517", bg: "#FFF8EC", label: "Pending",   icon: "⏳" },
@@ -95,7 +105,9 @@ function BookingCard({ booking, onCancel }) {
 export default function BookingsPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { role, setRole } = useContext(RoleContext);
+  const { role } = useContext(RoleContext);   // real role from Google OAuth — 'USER' or 'ADMIN'
+  const { user } = useAuthStore();
+  const isAdmin = role === "ADMIN";
   const preselectedId = searchParams.get("resourceId") || "";
 
   const [resources, setResources] = useState([]);
@@ -106,38 +118,42 @@ export default function BookingsPage() {
   const [activeTab, setActiveTab] = useState("new");
 
   const [form, setForm] = useState({
-    resourceId: preselectedId, bookedBy: "", startTime: "", endTime: "", purpose: "", attendees: 1,
+    resourceId: preselectedId,
+    bookedBy: user?.email || "",   // pre-fill with logged-in user's email
+    startTime: "", endTime: "", purpose: "", attendees: 1,
   });
 
   useEffect(() => {
-    axios.get(`${API}/resources?size=100`).then(r => setResources(r.data.content || r.data)).catch(() => {});
-    fetchMyBookings();
+    axios.get(`${API}/resources?size=100`, authConfig())
+      .then(r => setResources(r.data.content || r.data))
+      .catch(() => {});
+    if (form.bookedBy) fetchMyBookings();
   }, []);
 
   const fetchMyBookings = async () => {
     if (!form.bookedBy) return;
     setLoading(true);
     try {
-      const res = await axios.get(`${API}/bookings/my?email=${form.bookedBy}`);
+      const res = await axios.get(`${API}/bookings/my?email=${form.bookedBy}`, authConfig());
       setBookings(res.data);
     } catch { } finally { setLoading(false); }
   };
 
   const handleSubmit = async () => {
     if (!form.resourceId) { toast.error("Please select a resource"); return; }
-    if (!form.bookedBy) { toast.error("Please enter your email"); return; }
+    if (!form.bookedBy)   { toast.error("Please enter your email"); return; }
     if (!form.startTime || !form.endTime) { toast.error("Please select start and end times"); return; }
     if (new Date(form.endTime) <= new Date(form.startTime)) { toast.error("End time must be after start time"); return; }
     if (!form.purpose.trim()) { toast.error("Please enter the purpose of booking"); return; }
 
     if (selectedResource?.capacity && parseInt(form.attendees) > selectedResource.capacity) {
-    toast.error(`Attendees (${form.attendees}) exceeds room capacity (${selectedResource.capacity})`);
-    return;
-  }
+      toast.error(`Attendees (${form.attendees}) exceeds room capacity (${selectedResource.capacity})`);
+      return;
+    }
 
     setSubmitting(true);
     try {
-      await axios.post(`${API}/bookings`, { ...form, attendees: parseInt(form.attendees) || 1 });
+      await axios.post(`${API}/bookings`, { ...form, attendees: parseInt(form.attendees) || 1 }, authConfig());
       toast.success("Booking request submitted! Awaiting admin approval.");
       setForm(f => ({ ...f, startTime: "", endTime: "", purpose: "", attendees: 1 }));
       setActiveTab("mine");
@@ -150,7 +166,7 @@ export default function BookingsPage() {
   const handleCancel = async (id) => {
     if (!window.confirm("Cancel this booking?")) return;
     try {
-      await axios.patch(`${API}/bookings/${id}/cancel`);
+      await axios.patch(`${API}/bookings/${id}/cancel`, {}, authConfig());
       toast.success("Booking cancelled");
       fetchMyBookings();
     } catch { toast.error("Failed to cancel booking"); }
@@ -164,27 +180,39 @@ export default function BookingsPage() {
     <div style={{ minHeight: "100vh", background: "var(--bg)", fontFamily: "inherit" }}>
       <Toaster position="top-right" />
 
-      {/* Header — same pattern as Member 1's CataloguePage */}
       <header className="app-header">
         <div className="app-logo" onClick={() => navigate("/")}>UNI <span>Campus Hub</span></div>
         <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-          {/* Role Toggle — Member 1's original pattern */}
-          <div className="role-toggle">
-            <button className={`role-btn ${role === "STUDENT" ? "active" : ""}`} onClick={() => setRole("STUDENT")}>
-              👤 Student
+          {/* Admin can jump to admin view */}
+          {isAdmin && (
+            <button className="btn btn-secondary" onClick={() => navigate("/admin/bookings")}>
+              ⚙️ Admin View
             </button>
-            <button className={`role-btn ${role === "ADMIN" ? "active" : ""}`} onClick={() => {
-              setRole("ADMIN");
-              navigate("/admin/bookings");
-            }}>
-              ⚙️ Admin
-            </button>
-          </div>
+          )}
           <button className="btn btn-secondary" onClick={() => navigate("/")}>← Catalogue</button>
+
+          {/* User info chip */}
+          {user && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6,
+              background: 'rgba(255,255,255,0.15)', borderRadius: 20,
+              padding: '4px 10px 4px 4px', border: '1px solid rgba(255,255,255,0.3)' }}>
+              {user.profilePicture
+                ? <img src={user.profilePicture} alt="avatar" style={{ width: 26, height: 26, borderRadius: '50%' }} />
+                : <div style={{ width: 26, height: 26, borderRadius: '50%', background: 'rgba(255,255,255,0.3)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: '#fff' }}>
+                    {user.name?.charAt(0) || '?'}
+                  </div>
+              }
+              <span style={{ fontSize: 13, color: '#fff' }}>{user.name || user.email}</span>
+              <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 4,
+                background: isAdmin ? '#E87722' : '#1D9E75', color: '#fff' }}>
+                {role}
+              </span>
+            </div>
+          )}
         </div>
       </header>
 
-      {/* Banner */}
       <div className="app-banner" style={{
         backgroundImage: "linear-gradient(rgba(0,51,102,0.88), rgba(0,83,160,0.88)), url('https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=1200&q=80')"
       }}>
@@ -244,24 +272,14 @@ export default function BookingsPage() {
 
                 <div>
                   <label className="form-label">Resource *</label>
-                  <select
-                      value={form.resourceId}
-                      onChange={e => setForm(f => ({ ...f, resourceId: e.target.value }))}
-                      className="form-input"
-                    >
-                      <option value="">— Select a resource —</option>
-
-                      {resources.map(r => (
-                        <option
-                          key={r.id}
-                          value={r.id}
-                          disabled={r.status !== "ACTIVE"}
-                        >
-                          {r.name} ({r.type?.replace(/_/g, " ")})
-                          {r.status !== "ACTIVE" ? ` — ${r.status}` : ""}
-                        </option>
-                      ))}
-                    </select>
+                  <select value={form.resourceId} onChange={e => setForm(f => ({ ...f, resourceId: e.target.value }))} className="form-input">
+                    <option value="">— Select a resource —</option>
+                    {resources.map(r => (
+                      <option key={r.id} value={r.id} disabled={r.status !== "ACTIVE"}>
+                        {r.name} ({r.type?.replace(/_/g, " ")}){r.status !== "ACTIVE" ? ` — ${r.status}` : ""}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div>
@@ -283,7 +301,6 @@ export default function BookingsPage() {
                   </div>
                 </div>
 
-                {/* Duration preview */}
                 {form.startTime && form.endTime && new Date(form.endTime) > new Date(form.startTime) && (() => {
                   const ms = new Date(form.endTime) - new Date(form.startTime);
                   const h = Math.floor(ms / 3600000);
@@ -361,7 +378,6 @@ export default function BookingsPage() {
                 </div>
               )}
 
-              {/* Workflow info */}
               <div style={{ background: "#fff", borderRadius: "12px", border: "1px solid #eee", padding: "18px 20px", boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
                 <div style={{ fontSize: "12px", fontWeight: "700", color: "#555", marginBottom: "14px", textTransform: "uppercase", letterSpacing: "0.05em" }}>Booking Workflow</div>
                 {[
@@ -384,7 +400,6 @@ export default function BookingsPage() {
         {/* ── MY BOOKINGS ── */}
         {activeTab === "mine" && (
           <div>
-            {/* Email lookup row */}
             <div style={{
               background: "#fff", border: "1px solid #eee", borderRadius: "10px",
               padding: "14px 18px", marginBottom: "20px",
@@ -407,7 +422,6 @@ export default function BookingsPage() {
               }}>Search</button>
             </div>
 
-            {/* Status filter pills */}
             <div style={{ display: "flex", gap: "8px", marginBottom: "20px", flexWrap: "wrap", alignItems: "center" }}>
               <span style={{ fontSize: "13px", color: "#888", marginRight: "4px" }}>Filter:</span>
               <button onClick={() => setFilterStatus("")} style={{

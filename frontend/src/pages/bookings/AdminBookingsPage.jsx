@@ -3,8 +3,14 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import toast, { Toaster } from "react-hot-toast";
 import { RoleContext } from "../../App";
+import { useAuthStore } from "../../store/authStore";
 
 const API = "http://localhost:8081/api/v1";
+
+function authConfig() {
+  const token = useAuthStore.getState().token;
+  return token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+}
 
 const STATUS_META = {
   PENDING:   { color: "#BA7517", bg: "#FFF8EC", label: "Pending",   icon: "⏳" },
@@ -25,22 +31,28 @@ function StatusBadge({ status }) {
 
 export default function AdminBookingsPage() {
   const navigate = useNavigate();
-  const { role } = useContext(RoleContext);
+  const { role } = useContext(RoleContext);   // real role from Google OAuth
+  const { user } = useAuthStore();
+  const isAdmin = role === "ADMIN";
 
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(false);
   const [filterStatus, setFilterStatus] = useState("PENDING");
   const [searchQuery, setSearchQuery] = useState("");
-  const [rejectModal, setRejectModal] = useState(null); // booking id
+  const [rejectModal, setRejectModal] = useState(null);
   const [rejectReason, setRejectReason] = useState("");
   const [processingId, setProcessingId] = useState(null);
 
-  useEffect(() => { fetchAll(); }, []);
+  useEffect(() => {
+    // Redirect non-admins away
+    if (!isAdmin) { navigate("/bookings"); return; }
+    fetchAll();
+  }, [isAdmin]);
 
   const fetchAll = async () => {
     setLoading(true);
     try {
-      const res = await axios.get(`${API}/bookings`);
+      const res = await axios.get(`${API}/bookings`, authConfig());
       setBookings(res.data);
     } catch {
       toast.error("Failed to load bookings");
@@ -50,7 +62,7 @@ export default function AdminBookingsPage() {
   const approve = async (id) => {
     setProcessingId(id);
     try {
-      await axios.patch(`${API}/bookings/${id}/approve`);
+      await axios.patch(`${API}/bookings/${id}/approve`, {}, authConfig());
       toast.success("Booking approved!");
       fetchAll();
     } catch (err) {
@@ -62,7 +74,7 @@ export default function AdminBookingsPage() {
     if (!rejectReason.trim()) { toast.error("Please provide a rejection reason"); return; }
     setProcessingId(rejectModal);
     try {
-      await axios.patch(`${API}/bookings/${rejectModal}/reject`, { reason: rejectReason });
+      await axios.patch(`${API}/bookings/${rejectModal}/reject`, { reason: rejectReason }, authConfig());
       toast.success("Booking rejected");
       setRejectModal(null);
       setRejectReason("");
@@ -92,6 +104,22 @@ export default function AdminBookingsPage() {
         <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
           <button className="btn btn-secondary" onClick={() => navigate("/bookings")}>👤 User View</button>
           <button className="btn btn-secondary" onClick={() => navigate("/")}>← Catalogue</button>
+          {/* User info chip */}
+          {user && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6,
+              background: 'rgba(255,255,255,0.15)', borderRadius: 20,
+              padding: '4px 10px 4px 4px', border: '1px solid rgba(255,255,255,0.3)' }}>
+              {user.profilePicture
+                ? <img src={user.profilePicture} alt="avatar" style={{ width: 26, height: 26, borderRadius: '50%' }} />
+                : <div style={{ width: 26, height: 26, borderRadius: '50%', background: 'rgba(255,255,255,0.3)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: '#fff' }}>
+                    {user.name?.charAt(0) || '?'}
+                  </div>
+              }
+              <span style={{ fontSize: 13, color: '#fff' }}>{user.name || user.email}</span>
+              <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 4, background: '#E87722', color: '#fff' }}>ADMIN</span>
+            </div>
+          )}
         </div>
       </header>
 
@@ -133,7 +161,7 @@ export default function AdminBookingsPage() {
           ))}
         </div>
 
-        {/* Toolbar ---*/}
+        {/* Toolbar */}
         <div style={{ display: "flex", gap: "12px", marginBottom: "20px", flexWrap: "wrap", alignItems: "center" }}>
           <input
             placeholder="Search resource, user, purpose..."
@@ -175,7 +203,6 @@ export default function AdminBookingsPage() {
           </div>
         ) : (
           <div style={{ background: "#fff", borderRadius: "12px", border: "1px solid #eee", overflow: "hidden", boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
-            {/* Table header */}
             <div style={{
               display: "grid",
               gridTemplateColumns: "2fr 1.5fr 1.8fr 1.8fr 80px 80px 160px",
@@ -183,13 +210,8 @@ export default function AdminBookingsPage() {
               borderBottom: "1px solid #eee", fontSize: "11px", fontWeight: "700",
               color: "#aaa", textTransform: "uppercase", letterSpacing: "0.05em"
             }}>
-              <span>Resource</span>
-              <span>Booked By</span>
-              <span>Start Time</span>
-              <span>End Time</span>
-              <span>Pax</span>
-              <span>Status</span>
-              <span>Actions</span>
+              <span>Resource</span><span>Booked By</span><span>Start Time</span>
+              <span>End Time</span><span>Pax</span><span>Status</span><span>Actions</span>
             </div>
 
             {filtered.map((b, i) => {
@@ -201,8 +223,7 @@ export default function AdminBookingsPage() {
                   display: "grid",
                   gridTemplateColumns: "2fr 1.5fr 1.8fr 1.8fr 80px 80px 160px",
                   padding: "14px 20px", borderBottom: i < filtered.length - 1 ? "1px solid #f5f5f5" : "none",
-                  alignItems: "center", transition: "background 0.1s",
-                  background: b.status === "PENDING" ? "#FFFDF5" : "#fff",
+                  alignItems: "center", background: b.status === "PENDING" ? "#FFFDF5" : "#fff",
                 }}
                   onMouseEnter={e => e.currentTarget.style.background = "#fafcff"}
                   onMouseLeave={e => e.currentTarget.style.background = b.status === "PENDING" ? "#FFFDF5" : "#fff"}
@@ -225,23 +246,17 @@ export default function AdminBookingsPage() {
                   <div style={{ display: "flex", gap: "6px" }}>
                     {b.status === "PENDING" && (
                       <>
-                        <button
-                          onClick={() => approve(b.id)}
-                          disabled={isProcessing}
-                          style={{
-                            padding: "6px 12px", borderRadius: "7px", border: "none",
-                            background: "#1D9E75", color: "#fff", cursor: "pointer",
-                            fontSize: "12px", fontWeight: "600", opacity: isProcessing ? 0.5 : 1
-                          }}>✓ Approve</button>
-                        <button
-                          onClick={() => { setRejectModal(b.id); setRejectReason(""); }}
-                          disabled={isProcessing}
-                          style={{
-                            padding: "6px 12px", borderRadius: "7px",
-                            border: "1px solid #ffcdd2", background: "transparent",
-                            color: "#e53935", cursor: "pointer", fontSize: "12px", fontWeight: "600",
-                            opacity: isProcessing ? 0.5 : 1
-                          }}>✕ Reject</button>
+                        <button onClick={() => approve(b.id)} disabled={isProcessing} style={{
+                          padding: "6px 12px", borderRadius: "7px", border: "none",
+                          background: "#1D9E75", color: "#fff", cursor: "pointer",
+                          fontSize: "12px", fontWeight: "600", opacity: isProcessing ? 0.5 : 1
+                        }}>✓ Approve</button>
+                        <button onClick={() => { setRejectModal(b.id); setRejectReason(""); }} disabled={isProcessing} style={{
+                          padding: "6px 12px", borderRadius: "7px",
+                          border: "1px solid #ffcdd2", background: "transparent",
+                          color: "#e53935", cursor: "pointer", fontSize: "12px", fontWeight: "600",
+                          opacity: isProcessing ? 0.5 : 1
+                        }}>✕ Reject</button>
                       </>
                     )}
                     {b.status === "REJECTED" && b.rejectionReason && (

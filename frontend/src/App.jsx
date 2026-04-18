@@ -25,7 +25,8 @@ function ProtectedRoute({ children }) {
 }
 
 function App() {
-  const { token, setUser, user } = useAuthStore();
+  const { token, setUser } = useAuthStore();
+  // Role comes from the JWT — values are 'USER' or 'ADMIN'
   const [role, setRole] = useState('USER');
   const [loading, setLoading] = useState(true);
 
@@ -62,7 +63,7 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
 
-          {/* Protected routes */}
+          {/* Catalogue & resources (Member 1) */}
           <Route path="/" element={
             <ProtectedRoute><CataloguePage /></ProtectedRoute>
           } />

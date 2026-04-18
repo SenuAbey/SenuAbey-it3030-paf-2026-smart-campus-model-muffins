@@ -4,7 +4,7 @@ import { getResources, deleteResource, updateResourceStatus, getResourceStats } 
 import useResourceStore from "../store/resourceStore";
 import toast, { Toaster } from "react-hot-toast";
 import { RoleContext } from "../App";
-import { useAuthStore } from '../store/authStore';
+import { useAuthStore } from "../store/authStore";
 
 const BASE = "http://localhost:8081/api/v1";
 
@@ -39,9 +39,10 @@ const statusColor = {
 
 export default function CataloguePage() {
   const navigate = useNavigate();
-  const { role } = useContext(RoleContext);
+  const { role } = useContext(RoleContext);           // real role from Google OAuth
   const { filters, setFilters, resetFilters } = useResourceStore();
   const { logoutUser, user } = useAuthStore();
+
   const [view, setView] = useState("categories");
   const [selectedType, setSelectedType] = useState(null);
   const [resources, setResources] = useState([]);
@@ -191,7 +192,7 @@ export default function CataloguePage() {
 
         <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
 
-          {/* Incident Tickets button — always visible */}
+          {/* Incident Tickets — always visible */}
           <button
             className="btn btn-secondary"
             onClick={() => navigate("/tickets")}
@@ -205,6 +206,9 @@ export default function CataloguePage() {
             <>
               <button className="btn btn-secondary" onClick={() => navigate("/admin/bookings")}>
                 📋 Manage Bookings
+              </button>
+              <button className="btn btn-secondary" onClick={() => navigate("/technicians")}>
+                👷 Manage Technicians
               </button>
               <button className="btn btn-secondary" onClick={() => navigate("/resource-groups")}>
                 Manage Groups
