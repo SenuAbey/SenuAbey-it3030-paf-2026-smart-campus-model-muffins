@@ -8,9 +8,8 @@ import { useAuthStore } from "../../store/authStore";
 const API = "http://localhost:8081/api/v1";
 
 /**
- * Helper: returns an axios config object with the JWT Authorization header.
- * Needed because this file uses raw axios (not the resourceApi instance),
- * and the backend requires authentication on all booking endpoints.
+ * Returns axios config with JWT Authorization header.
+ * Called as a plain function (not a hook) so it's safe inside event handlers.
  */
 function authConfig() {
   const token = useAuthStore.getState().token;
@@ -106,8 +105,9 @@ function BookingCard({ booking, onCancel }) {
 export default function BookingsPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  // FIX: role values come from JWT as 'USER' / 'ADMIN', not 'STUDENT' / 'ADMIN'
-  const { role, setRole } = useContext(RoleContext);
+  const { role } = useContext(RoleContext);   // real role from Google OAuth — 'USER' or 'ADMIN'
+  const { user } = useAuthStore();
+  const isAdmin = role === "ADMIN";
   const preselectedId = searchParams.get("resourceId") || "";
 
   const [resources, setResources] = useState([]);
@@ -118,14 +118,16 @@ export default function BookingsPage() {
   const [activeTab, setActiveTab] = useState("new");
 
   const [form, setForm] = useState({
-    resourceId: preselectedId, bookedBy: "", startTime: "", endTime: "", purpose: "", attendees: 1,
+    resourceId: preselectedId,
+    bookedBy: user?.email || "",   // pre-fill with logged-in user's email
+    startTime: "", endTime: "", purpose: "", attendees: 1,
   });
 
   useEffect(() => {
     axios.get(`${API}/resources?size=100`, authConfig())
       .then(r => setResources(r.data.content || r.data))
       .catch(() => {});
-    fetchMyBookings();
+    if (form.bookedBy) fetchMyBookings();
   }, []);
 
   const fetchMyBookings = async () => {
@@ -139,7 +141,7 @@ export default function BookingsPage() {
 
   const handleSubmit = async () => {
     if (!form.resourceId) { toast.error("Please select a resource"); return; }
-    if (!form.bookedBy) { toast.error("Please enter your email"); return; }
+    if (!form.bookedBy)   { toast.error("Please enter your email"); return; }
     if (!form.startTime || !form.endTime) { toast.error("Please select start and end times"); return; }
     if (new Date(form.endTime) <= new Date(form.startTime)) { toast.error("End time must be after start time"); return; }
     if (!form.purpose.trim()) { toast.error("Please enter the purpose of booking"); return; }
@@ -181,19 +183,33 @@ export default function BookingsPage() {
       <header className="app-header">
         <div className="app-logo" onClick={() => navigate("/")}>UNI <span>Campus Hub</span></div>
         <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-          {/* FIX: role toggle now uses 'USER' (not 'STUDENT') to match JWT role values */}
-          <div className="role-toggle">
-            <button className={`role-btn ${role === "USER" ? "active" : ""}`} onClick={() => setRole("USER")}>
-              👤 User
+          {/* Admin can jump to admin view */}
+          {isAdmin && (
+            <button className="btn btn-secondary" onClick={() => navigate("/admin/bookings")}>
+              ⚙️ Admin View
             </button>
-            <button className={`role-btn ${role === "ADMIN" ? "active" : ""}`} onClick={() => {
-              setRole("ADMIN");
-              navigate("/admin/bookings");
-            }}>
-              ⚙️ Admin
-            </button>
-          </div>
+          )}
           <button className="btn btn-secondary" onClick={() => navigate("/")}>← Catalogue</button>
+
+          {/* User info chip */}
+          {user && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6,
+              background: 'rgba(255,255,255,0.15)', borderRadius: 20,
+              padding: '4px 10px 4px 4px', border: '1px solid rgba(255,255,255,0.3)' }}>
+              {user.profilePicture
+                ? <img src={user.profilePicture} alt="avatar" style={{ width: 26, height: 26, borderRadius: '50%' }} />
+                : <div style={{ width: 26, height: 26, borderRadius: '50%', background: 'rgba(255,255,255,0.3)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: '#fff' }}>
+                    {user.name?.charAt(0) || '?'}
+                  </div>
+              }
+              <span style={{ fontSize: 13, color: '#fff' }}>{user.name || user.email}</span>
+              <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 4,
+                background: isAdmin ? '#E87722' : '#1D9E75', color: '#fff' }}>
+                {role}
+              </span>
+            </div>
+          )}
         </div>
       </header>
 
@@ -256,19 +272,14 @@ export default function BookingsPage() {
 
                 <div>
                   <label className="form-label">Resource *</label>
-                  <select
-                      value={form.resourceId}
-                      onChange={e => setForm(f => ({ ...f, resourceId: e.target.value }))}
-                      className="form-input"
-                    >
-                      <option value="">— Select a resource —</option>
-                      {resources.map(r => (
-                        <option key={r.id} value={r.id} disabled={r.status !== "ACTIVE"}>
-                          {r.name} ({r.type?.replace(/_/g, " ")})
-                          {r.status !== "ACTIVE" ? ` — ${r.status}` : ""}
-                        </option>
-                      ))}
-                    </select>
+                  <select value={form.resourceId} onChange={e => setForm(f => ({ ...f, resourceId: e.target.value }))} className="form-input">
+                    <option value="">— Select a resource —</option>
+                    {resources.map(r => (
+                      <option key={r.id} value={r.id} disabled={r.status !== "ACTIVE"}>
+                        {r.name} ({r.type?.replace(/_/g, " ")}){r.status !== "ACTIVE" ? ` — ${r.status}` : ""}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div>

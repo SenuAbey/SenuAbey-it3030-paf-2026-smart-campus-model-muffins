@@ -3,10 +3,10 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import CataloguePage from './pages/CataloguePage';
 import ResourceDetailPage from './pages/ResourceDetailPage';
 import ResourceGroupPage from './pages/ResourceGroupPage';
-import LoginPage from './pages/LoginPage';
-import AuthCallback from './pages/AuthCallback';
 import BookingsPage from './pages/bookings/BookingsPage';
 import AdminBookingsPage from './pages/bookings/AdminBookingsPage';
+import LoginPage from './pages/LoginPage';
+import AuthCallback from './pages/AuthCallback';
 import { useAuthStore } from './store/authStore';
 import { getMe } from './api/authApi';
 import './global.css';
@@ -26,8 +26,7 @@ function ProtectedRoute({ children }) {
 
 function App() {
   const { token, setUser } = useAuthStore();
-  // Role comes from the JWT user object returned by /auth/me.
-  // Use 'USER' (not 'STUDENT') to match the role strings from the backend.
+  // Role comes from the JWT — values are 'USER' or 'ADMIN'
   const [role, setRole] = useState('USER');
   const [loading, setLoading] = useState(true);
 
@@ -64,7 +63,7 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
 
-          {/* Protected routes — catalogue & resources */}
+          {/* Catalogue & resources (Member 1) */}
           <Route path="/" element={
             <ProtectedRoute><CataloguePage /></ProtectedRoute>
           } />
@@ -75,7 +74,7 @@ function App() {
             <ProtectedRoute><ResourceGroupPage /></ProtectedRoute>
           } />
 
-          {/* Protected routes — bookings (added from feature branch) */}
+          {/* Booking routes (Member 2) */}
           <Route path="/bookings" element={
             <ProtectedRoute><BookingsPage /></ProtectedRoute>
           } />
@@ -83,7 +82,7 @@ function App() {
             <ProtectedRoute><AdminBookingsPage /></ProtectedRoute>
           } />
 
-          {/* Protected routes — tickets */}
+          {/* Ticket routes (Member 3) */}
           <Route path="/tickets" element={
             <ProtectedRoute><TicketsPage /></ProtectedRoute>
           } />

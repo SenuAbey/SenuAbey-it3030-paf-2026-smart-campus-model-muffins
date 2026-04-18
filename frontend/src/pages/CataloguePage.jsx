@@ -4,6 +4,7 @@ import { getResources, deleteResource, updateResourceStatus, getResourceStats } 
 import useResourceStore from "../store/resourceStore";
 import toast, { Toaster } from "react-hot-toast";
 import { RoleContext } from "../App";
+import { useAuthStore } from "../store/authStore";
 
 const BASE = "http://localhost:8081/api/v1";
 
@@ -38,8 +39,10 @@ const statusColor = {
 
 export default function CataloguePage() {
   const navigate = useNavigate();
-  const { role, setRole } = useContext(RoleContext);
+  const { role } = useContext(RoleContext);           // real role from Google OAuth
   const { filters, setFilters, resetFilters } = useResourceStore();
+  const { logoutUser, user } = useAuthStore();
+
   const [view, setView] = useState("categories");
   const [selectedType, setSelectedType] = useState(null);
   const [resources, setResources] = useState([]);
@@ -181,33 +184,22 @@ export default function CataloguePage() {
     <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
       <Toaster position="top-right" />
 
-      {/* Header */}
+      {/* ── Header ──────────────────────────────────────────────────────── */}
       <header className="app-header">
         <div className="app-logo" onClick={() => { setView("categories"); setSelectedType(null); }}>
           UNI <span>Campus Hub</span>
         </div>
-        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-          {/* Role Toggle — Member 1's original logic */}
-          <div className="role-toggle">
-            {/* FIX: Role enum is USER/ADMIN/TECHNICIAN — "STUDENT" does not exist */}
-            <button className={`role-btn ${role === "USER" ? "active" : ""}`} onClick={() => setRole("USER")}>
-              👤 User
-            </button>
-            <button className={`role-btn ${role === "ADMIN" ? "active" : ""}`} onClick={() => setRole("ADMIN")}>
-              ⚙️ Admin
-            </button>
-          </div>
 
-          <button className="btn btn-secondary" onClick={() => navigate("/tickets")}>
+        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+
+          {/* Incident Tickets — always visible */}
+          <button
+            className="btn btn-secondary"
+            onClick={() => navigate("/tickets")}
+            style={{ background: '#E87722', color: '#fff', border: 'none' }}
+          >
             🔧 Incident Tickets
           </button>
-
-         
-          {isAdmin && (
-            <button className="btn btn-secondary" onClick={() => navigate("/technicians")}>
-              👷 Manage Technicians
-            </button>
-          )}
 
           {/* Admin-only nav buttons */}
           {isAdmin && (
@@ -215,23 +207,51 @@ export default function CataloguePage() {
               <button className="btn btn-secondary" onClick={() => navigate("/admin/bookings")}>
                 📋 Manage Bookings
               </button>
+              <button className="btn btn-secondary" onClick={() => navigate("/technicians")}>
+                👷 Manage Technicians
+              </button>
               <button className="btn btn-secondary" onClick={() => navigate("/resource-groups")}>
                 Manage Groups
               </button>
-              <button className="btn btn-primary" onClick={openAddModal}>+ Add Resource</button>
+              <button className="btn btn-primary" onClick={openAddModal}>
+                + Add Resource
+              </button>
             </>
           )}
 
-          {/* Student-only nav button */}
+          {/* User-only nav button */}
           {!isAdmin && (
             <button className="btn btn-secondary" onClick={() => navigate("/bookings")}>
               📅 My Bookings
             </button>
           )}
+
+          {/* User info chip + logout */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {user?.profilePicture && (
+              <img src={user.profilePicture} alt="avatar"
+                style={{ width: 32, height: 32, borderRadius: '50%', border: '2px solid #fff' }} />
+            )}
+            <span style={{ color: '#fff', fontSize: 13 }}>{user?.name || user?.email}</span>
+            <span style={{
+              background: isAdmin ? '#E87722' : '#1D9E75',
+              color: '#fff', fontSize: 11, padding: '2px 8px', borderRadius: 4, fontWeight: 700
+            }}>
+              {role}
+            </span>
+            <button
+              className="btn"
+              style={{ background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', fontSize: 12 }}
+              onClick={() => { logoutUser(); navigate('/login'); }}
+            >
+              Logout
+            </button>
+          </div>
+
         </div>
       </header>
 
-      {/* Banner */}
+      {/* ── Banner ──────────────────────────────────────────────────────── */}
       <div className="app-banner" style={{
         backgroundImage: "linear-gradient(rgba(0,51,102,0.88), rgba(0,83,160,0.88)), url('https://images.unsplash.com/photo-1541339907198-e08756ebafe3?w=1200&q=80')"
       }}>
@@ -265,7 +285,7 @@ export default function CataloguePage() {
 
       <div style={{ maxWidth: "1400px", margin: "0 auto", padding: "30px 20px" }}>
 
-        {/* Stats - Admin only */}
+        {/* Stats — Admin only */}
         {view === "categories" && isAdmin && stats && (
           <div className="stats-grid">
             {[
@@ -380,7 +400,7 @@ export default function CataloguePage() {
                         </div>
                       )}
 
-                      {/* Student view - View & Book goes to resource detail page */}
+                      {/* User view — View & Book */}
                       {!isAdmin && r.status === "ACTIVE" && (
                         <button onClick={(e) => { e.stopPropagation(); navigate(`/resources/${r.id}`); }}
                           className="btn btn-primary" style={{ width: "100%", marginTop: "12px" }}>
@@ -406,7 +426,7 @@ export default function CataloguePage() {
         © 2026 Smart Campus Operations Hub
       </footer>
 
-      {/* Modal - Admin only */}
+      {/* Modal — Admin only */}
       {showModal && isAdmin && (
         <div className="modal-overlay">
           <div className="modal">

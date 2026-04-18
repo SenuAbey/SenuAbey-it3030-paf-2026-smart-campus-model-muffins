@@ -13,11 +13,9 @@ import java.util.Map;
 
 /**
  * Booking endpoints.
- *
  * NOTE: @CrossOrigin is intentionally removed here.
  * CORS is handled globally in SecurityConfig.corsConfigurationSource()
  * and WebConfig.addCorsMappings(), which already allow localhost:5173/5174.
- * Adding @CrossOrigin on top of Spring Security's CORS filter causes conflicts.
  */
 @RestController
 @RequestMapping("/api/v1/bookings")
