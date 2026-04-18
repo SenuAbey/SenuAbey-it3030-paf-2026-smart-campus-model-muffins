@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { fetchTickets, fetchTicketStats } from '../api/ticketApi';
 import { RoleContext } from '../App';
 import { useAuthStore } from '../store/authStore';
+import AppHeader from '../components/AppHeader';
 import './tickets.css';
 
 const timeAgo = (dateStr) => {
@@ -154,75 +155,39 @@ export default function TicketsPage() {
   return (
     <div className="tickets-page">
       {/* ── Header ─────────────────────────────────────────────────────── */}
-      <div className="page-header">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
-          <div>
-            <h1>🔧 Incident Tickets</h1>
-            <p>Report and track maintenance issues across campus facilities</p>
-          </div>
+      <AppHeader />
 
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-            {/* User info chip */}
-            {user && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6,
-                background: 'rgba(255,255,255,0.15)', borderRadius: 20,
-                padding: '4px 10px 4px 4px', border: '1px solid rgba(255,255,255,0.3)' }}>
-                {user.profilePicture
-                  ? <img src={user.profilePicture} alt="avatar"
-                      style={{ width: 26, height: 26, borderRadius: '50%' }} />
-                  : <div style={{ width: 26, height: 26, borderRadius: '50%',
-                      background: 'rgba(255,255,255,0.3)', display: 'flex',
-                      alignItems: 'center', justifyContent: 'center',
-                      fontSize: 12, fontWeight: 700, color: '#fff' }}>
-                      {user.name?.charAt(0) || user.email?.charAt(0) || '?'}
-                    </div>
-                }
-                <span style={{ fontSize: 13, color: '#fff', fontWeight: 500 }}>
-                  {user.name || user.email}
-                </span>
-                <span style={{
-                  fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 4,
-                  background: isAdmin ? '#E87722' : '#1D9E75', color: '#fff',
-                }}>
-                  {role}
-                </span>
-              </div>
-            )}
-
-            <button className="btn btn-orange" onClick={() => navigate('/tickets/new')}>
-              + New Ticket
-            </button>
-
-            {isAdmin && (
-              <button
-                className="btn btn-ghost"
-                style={{ color: 'white', borderColor: 'rgba(255,255,255,0.4)' }}
-                onClick={() => navigate('/tickets/stats')}
-              >
-                📊 Dashboard
-              </button>
-            )}
-
-            <button
-              className="btn btn-ghost"
-              style={{ color: 'white', borderColor: 'rgba(255,255,255,0.4)' }}
-              onClick={() => navigate('/')}
-            >
-              🏠 Campus Hub
-            </button>
-
-            <button
-              className="btn btn-ghost"
-              style={{ color: 'white', borderColor: 'rgba(255,255,255,0.4)' }}
-              onClick={handleLogout}
-            >
-              Logout
-            </button>
-          </div>
+      {/* ── Blue banner matching CataloguePage ──────────────────────────── */}
+      <div className="app-banner" style={{
+        backgroundImage: "linear-gradient(rgba(0,51,102,0.88), rgba(0,83,160,0.88)), url('https://images.unsplash.com/photo-1603126857599-f6e157fa2fe6?w=1200&q=80')",
+      }}>
+        <div style={{ fontSize: '12px', opacity: 0.7, marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+          Smart Campus Operations Hub
         </div>
+        <h1 style={{ fontSize: '36px', fontWeight: '300', margin: '0 0 8px', color: '#fff' }}>
+          Incident <strong style={{ fontWeight: '800' }}>Tickets</strong>
+        </h1>
+        <p style={{ opacity: 0.8, margin: 0, fontSize: '15px', color: '#fff' }}>
+          {isAdmin ? 'Managing all campus incident reports' : 'Report and track maintenance issues across campus facilities'}
+        </p>
       </div>
 
       <div className="page-content">
+        <div style={{ display: 'flex', gap: 10, marginBottom: '1.25rem', flexWrap: 'wrap' }}>
+          <button className="btn btn-orange" onClick={() => navigate('/tickets/new')}>
+            + New Ticket
+          </button>
+          {isAdmin && (
+            <button
+              className="btn btn-ghost btn-sm"
+              style={{ borderColor: 'var(--border)', color: 'var(--text)' }}
+              onClick={() => navigate('/tickets/stats')}
+            >
+              📊 Dashboard
+            </button>
+          )}
+        </div>
+
         {/* ── Role banner ─────────────────────────────────────────────── */}
         <div className={`role-banner ${isAdmin ? 'admin' : 'user'}`}>
           {isAdmin
@@ -365,6 +330,9 @@ export default function TicketsPage() {
           </>
         )}
       </div>
+      <footer className="app-footer">
+        © 2026 Smart Campus Operations Hub
+      </footer>
     </div>
   );
 }

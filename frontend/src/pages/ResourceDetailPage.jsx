@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { getResourceById, deleteResource, updateResourceStatus } from "../api/resourceApi";
 import toast, { Toaster } from "react-hot-toast";
 import { RoleContext } from "../App";
+import AppHeader from "../components/AppHeader";
 
 const statusColor = {
   ACTIVE: "#1D9E75",
@@ -61,8 +62,11 @@ export default function ResourceDetailPage() {
   if (!resource) return null;
 
   return (
-    <div style={{ padding: "24px", maxWidth: "800px", margin: "0 auto", fontFamily: "sans-serif" }}>
+    <div style={{ minHeight: "100vh", background: "var(--bg, #f5f6fa)" }}>
       <Toaster position="top-right" />
+      <AppHeader />
+
+      <div style={{ padding: "24px", maxWidth: "800px", margin: "0 auto", fontFamily: "sans-serif" }}>
 
       {/* Back button */}
       <button onClick={() => navigate("/")} style={{
@@ -201,6 +205,10 @@ export default function ResourceDetailPage() {
           }}>Delete Resource</button>
         </div>
       )}
+      </div>
+      <footer className="app-footer">
+        © 2026 Smart Campus Operations Hub
+      </footer>
     </div>
   );
 }
