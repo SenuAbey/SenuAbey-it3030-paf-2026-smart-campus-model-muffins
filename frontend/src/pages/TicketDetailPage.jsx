@@ -14,6 +14,7 @@ import TechnicianAssignPanel from './TechnicianAssignPanel';
 import RatingModal from './RatingModal';
 import { RoleContext } from '../App';
 import { useAuthStore } from '../store/authStore';
+import AppHeader from '../components/AppHeader';
 import './tickets.css';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -373,54 +374,20 @@ export default function TicketDetailPage() {
       )}
 
       {/* ── Page Header ─────────────────────────────────────────────────── */}
-      <div className="page-header">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, flexWrap: 'wrap', gap: 8 }}>
-          <button
-            className="btn btn-ghost btn-sm"
-            style={{ color: 'white', borderColor: 'rgba(255,255,255,0.4)' }}
-            onClick={() => navigate('/tickets')}
-          >
-            ← Back to Tickets
-          </button>
+      <AppHeader />
 
-          {/* User identity chip in header */}
-          {user && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6,
-              background: 'rgba(255,255,255,0.15)', borderRadius: 20,
-              padding: '4px 10px 4px 4px', border: '1px solid rgba(255,255,255,0.3)' }}>
-              {user.profilePicture
-                ? <img src={user.profilePicture} alt="avatar"
-                    style={{ width: 24, height: 24, borderRadius: '50%' }} />
-                : <div style={{ width: 24, height: 24, borderRadius: '50%',
-                    background: 'rgba(255,255,255,0.3)', display: 'flex',
-                    alignItems: 'center', justifyContent: 'center',
-                    fontSize: 11, fontWeight: 700, color: '#fff' }}>
-                    {user.name?.charAt(0) || '?'}
-                  </div>
-              }
-              <span style={{ fontSize: 12, color: '#fff' }}>{user.name || user.email}</span>
-              <span style={{
-                fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 4,
-                background: isAdmin ? '#E87722' : '#1D9E75', color: '#fff',
-              }}>
-                {role}
-              </span>
-              <button
-                onClick={() => { logoutUser(); navigate('/login'); }}
-                style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.7)',
-                  cursor: 'pointer', fontSize: 12, padding: '0 2px' }}
-              >
-                Logout
-              </button>
-            </div>
-          )}
+      {/* ── Blue banner ─────────────────────────────────────────────────── */}
+      <div className="app-banner" style={{
+        backgroundImage: "linear-gradient(rgba(0,51,102,0.88), rgba(0,83,160,0.88)), url('https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=1200&q=80')",
+        padding: '28px 5%',
+      }}>
+        <div style={{ fontSize: '12px', opacity: 0.7, marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.1em', color: '#fff' }}>
+          Smart Campus Operations Hub — Ticket #{ticket.id}
         </div>
-
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12 }}>
-          <div>
-            <div style={{ fontSize: 11, opacity: 0.6, marginBottom: 3 }}>TICKET #{ticket.id}</div>
-            <h1 style={{ fontSize: '1.4rem' }}>{ticket.title}</h1>
-          </div>
+          <h1 style={{ fontSize: '1.6rem', fontWeight: '300', margin: 0, color: '#fff' }}>
+            <strong style={{ fontWeight: '800' }}>{ticket.title}</strong>
+          </h1>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             <StatusBadge status={ticket.status} />
             {ticket.escalated && <span className="escalated-badge">⚡ ESCALATED</span>}

@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import toast, { Toaster } from "react-hot-toast";
+import AppHeader from "../components/AppHeader";
 
 const BASE = "http://localhost:8081/api/v1";
 const TIERS = ["INSTANT", "DELEGATED", "ADMIN"];
 
 export default function ResourceGroupPage() {
+  const navigate = useNavigate();
   const [groups, setGroups] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [editingGroup, setEditingGroup] = useState(null);
@@ -82,25 +85,21 @@ export default function ResourceGroupPage() {
   const tierBg = { INSTANT: "#E1F5EE", DELEGATED: "#FAEEDA", ADMIN: "#E6F1FB" };
 
   return (
-    <div style={{ padding: "24px", maxWidth: "1200px", margin: "0 auto", fontFamily: "sans-serif" }}>
+    <div style={{ minHeight: "100vh", background: "var(--bg, #f5f6fa)" }}>
       <Toaster position="top-right" />
+      <AppHeader
+        extraNavButtons={
+          <button onClick={openAddModal} className="btn btn-primary">
+            + Add Group
+          </button>
+        }
+      />
 
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
-        <div>
+      <div style={{ padding: "24px", maxWidth: "1200px", margin: "0 auto", fontFamily: "sans-serif" }}>
+        <div style={{ marginBottom: "24px" }}>
           <h1 style={{ fontSize: "22px", fontWeight: "600", margin: 0 }}>Resource Groups</h1>
           <p style={{ fontSize: "13px", color: "#888", margin: "4px 0 0" }}>Manage asset categories and booking policies</p>
         </div>
-        <div style={{ display: "flex", gap: "10px" }}>
-          <button onClick={() => window.location.href = "/"} style={{
-            padding: "8px 16px", borderRadius: "8px", border: "1px solid #ddd",
-            background: "transparent", cursor: "pointer", fontSize: "13px"
-          }}>← Catalogue</button>
-          <button onClick={openAddModal} style={{
-            padding: "8px 20px", background: "#111", color: "#fff",
-            border: "none", borderRadius: "8px", cursor: "pointer", fontSize: "13px"
-          }}>+ Add Group</button>
-        </div>
-      </div>
 
       {groups.length === 0 ? (
         <div style={{ textAlign: "center", padding: "40px", color: "#888" }}>No groups yet. Create one!</div>
@@ -200,6 +199,7 @@ export default function ResourceGroupPage() {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { createTicket } from '../api/ticketApi';
 import { getResources } from '../api/resourceApi';
 import { useAuthStore } from '../store/authStore';
+import AppHeader from '../components/AppHeader';
 import './tickets.css';
 
 const CATEGORIES = [
@@ -122,16 +123,20 @@ export default function CreateTicketPage() {
   return (
     <div className="tickets-page">
       {/* Header */}
-      <div className="page-header">
-        <button
-          className="btn btn-ghost btn-sm"
-          style={{ color: 'white', borderColor: 'rgba(255,255,255,0.4)', marginBottom: '10px' }}
-          onClick={() => navigate('/tickets')}
-        >
-          ← Back to Tickets
-        </button>
-        <h1>🔧 Report an Incident</h1>
-        <p>Submit a maintenance or facility issue — our team will respond promptly</p>
+      <AppHeader />
+
+      <div className="app-banner" style={{
+        backgroundImage: "linear-gradient(rgba(0,51,102,0.88), rgba(0,83,160,0.88)), url('https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=1200&q=80')",
+      }}>
+        <div style={{ fontSize: '12px', opacity: 0.7, marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+          Smart Campus Operations Hub
+        </div>
+        <h1 style={{ fontSize: '36px', fontWeight: '300', margin: '0 0 8px', color: '#fff' }}>
+          Report an <strong style={{ fontWeight: '800' }}>Incident</strong>
+        </h1>
+        <p style={{ opacity: 0.8, margin: 0, fontSize: '15px', color: '#fff' }}>
+          Submit a maintenance or facility issue — our team will respond promptly
+        </p>
       </div>
 
       {/* Submitting as logged-in user */}

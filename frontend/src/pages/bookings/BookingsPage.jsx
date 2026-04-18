@@ -4,6 +4,7 @@ import axios from "axios";
 import toast, { Toaster } from "react-hot-toast";
 import { RoleContext } from "../../App";
 import { useAuthStore } from "../../store/authStore";
+import AppHeader from "../../components/AppHeader";
 
 const API = "http://localhost:8081/api/v1";
 
@@ -180,38 +181,7 @@ export default function BookingsPage() {
     <div style={{ minHeight: "100vh", background: "var(--bg)", fontFamily: "inherit" }}>
       <Toaster position="top-right" />
 
-      <header className="app-header">
-        <div className="app-logo" onClick={() => navigate("/")}>UNI <span>Campus Hub</span></div>
-        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-          {/* Admin can jump to admin view */}
-          {isAdmin && (
-            <button className="btn btn-secondary" onClick={() => navigate("/admin/bookings")}>
-              ⚙️ Admin View
-            </button>
-          )}
-          <button className="btn btn-secondary" onClick={() => navigate("/")}>← Catalogue</button>
-
-          {/* User info chip */}
-          {user && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6,
-              background: 'rgba(255,255,255,0.15)', borderRadius: 20,
-              padding: '4px 10px 4px 4px', border: '1px solid rgba(255,255,255,0.3)' }}>
-              {user.profilePicture
-                ? <img src={user.profilePicture} alt="avatar" style={{ width: 26, height: 26, borderRadius: '50%' }} />
-                : <div style={{ width: 26, height: 26, borderRadius: '50%', background: 'rgba(255,255,255,0.3)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: '#fff' }}>
-                    {user.name?.charAt(0) || '?'}
-                  </div>
-              }
-              <span style={{ fontSize: 13, color: '#fff' }}>{user.name || user.email}</span>
-              <span style={{ fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 4,
-                background: isAdmin ? '#E87722' : '#1D9E75', color: '#fff' }}>
-                {role}
-              </span>
-            </div>
-          )}
-        </div>
-      </header>
+      <AppHeader />
 
       <div className="app-banner" style={{
         backgroundImage: "linear-gradient(rgba(0,51,102,0.88), rgba(0,83,160,0.88)), url('https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=1200&q=80')"

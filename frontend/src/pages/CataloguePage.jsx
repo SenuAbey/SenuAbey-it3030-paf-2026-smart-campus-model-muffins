@@ -5,6 +5,7 @@ import useResourceStore from "../store/resourceStore";
 import toast, { Toaster } from "react-hot-toast";
 import { RoleContext } from "../App";
 import { useAuthStore } from "../store/authStore";
+import AppHeader from "../components/AppHeader";
 
 const BASE = "http://localhost:8081/api/v1";
 
@@ -41,7 +42,7 @@ export default function CataloguePage() {
   const navigate = useNavigate();
   const { role } = useContext(RoleContext);           // real role from Google OAuth
   const { filters, setFilters, resetFilters } = useResourceStore();
-  const { logoutUser, user } = useAuthStore();
+  const { logoutUser: _l, user: _u } = useAuthStore();
 
   const [view, setView] = useState("categories");
   const [selectedType, setSelectedType] = useState(null);
@@ -185,71 +186,15 @@ export default function CataloguePage() {
       <Toaster position="top-right" />
 
       {/* ── Header ──────────────────────────────────────────────────────── */}
-      <header className="app-header">
-        <div className="app-logo" onClick={() => { setView("categories"); setSelectedType(null); }}>
-          UNI <span>Campus Hub</span>
-        </div>
-
-        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-
-          {/* Incident Tickets — always visible */}
-          <button
-            className="btn btn-secondary"
-            onClick={() => navigate("/tickets")}
-            style={{ background: '#E87722', color: '#fff', border: 'none' }}
-          >
-            🔧 Incident Tickets
-          </button>
-
-          {/* Admin-only nav buttons */}
-          {isAdmin && (
-            <>
-              <button className="btn btn-secondary" onClick={() => navigate("/admin/bookings")}>
-                📋 Manage Bookings
-              </button>
-              <button className="btn btn-secondary" onClick={() => navigate("/technicians")}>
-                👷 Manage Technicians
-              </button>
-              <button className="btn btn-secondary" onClick={() => navigate("/resource-groups")}>
-                Manage Groups
-              </button>
-              <button className="btn btn-primary" onClick={openAddModal}>
-                + Add Resource
-              </button>
-            </>
-          )}
-
-          {/* User-only nav button */}
-          {!isAdmin && (
-            <button className="btn btn-secondary" onClick={() => navigate("/bookings")}>
-              📅 My Bookings
+      <AppHeader
+        extraNavButtons={
+          isAdmin && (
+            <button className="btn btn-primary" onClick={openAddModal}>
+              + Add Resource
             </button>
-          )}
-
-          {/* User info chip + logout */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            {user?.profilePicture && (
-              <img src={user.profilePicture} alt="avatar"
-                style={{ width: 32, height: 32, borderRadius: '50%', border: '2px solid #fff' }} />
-            )}
-            <span style={{ color: '#fff', fontSize: 13 }}>{user?.name || user?.email}</span>
-            <span style={{
-              background: isAdmin ? '#E87722' : '#1D9E75',
-              color: '#fff', fontSize: 11, padding: '2px 8px', borderRadius: 4, fontWeight: 700
-            }}>
-              {role}
-            </span>
-            <button
-              className="btn"
-              style={{ background: 'rgba(255,255,255,0.15)', color: '#fff', border: '1px solid rgba(255,255,255,0.3)', fontSize: 12 }}
-              onClick={() => { logoutUser(); navigate('/login'); }}
-            >
-              Logout
-            </button>
-          </div>
-
-        </div>
-      </header>
+          )
+        }
+      />
 
       {/* ── Banner ──────────────────────────────────────────────────────── */}
       <div className="app-banner" style={{
