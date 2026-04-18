@@ -189,20 +189,6 @@ export default function TicketsPage() {
               </div>
             )}
 
-            <button className="btn btn-orange" onClick={() => navigate('/tickets/new')}>
-              + New Ticket
-            </button>
-
-            {isAdmin && (
-              <button
-                className="btn btn-ghost"
-                style={{ color: 'white', borderColor: 'rgba(255,255,255,0.4)' }}
-                onClick={() => navigate('/tickets/stats')}
-              >
-                📊 Dashboard
-              </button>
-            )}
-
             <button
               className="btn btn-ghost"
               style={{ color: 'white', borderColor: 'rgba(255,255,255,0.4)' }}
@@ -223,6 +209,22 @@ export default function TicketsPage() {
       </div>
 
       <div className="page-content">
+        {/* ── Action buttons row (below header) ───────────────────────── */}
+        <div style={{ display: 'flex', gap: 10, marginBottom: '1.25rem', flexWrap: 'wrap' }}>
+          <button className="btn btn-orange" onClick={() => navigate('/tickets/new')}>
+            + New Ticket
+          </button>
+          {isAdmin && (
+            <button
+              className="btn btn-ghost btn-sm"
+              style={{ borderColor: 'var(--border)', color: 'var(--text)' }}
+              onClick={() => navigate('/tickets/stats')}
+            >
+              📊 Dashboard
+            </button>
+          )}
+        </div>
+
         {/* ── Role banner ─────────────────────────────────────────────── */}
         <div className={`role-banner ${isAdmin ? 'admin' : 'user'}`}>
           {isAdmin
