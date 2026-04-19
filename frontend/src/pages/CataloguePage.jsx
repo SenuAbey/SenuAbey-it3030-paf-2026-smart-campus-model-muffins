@@ -5,6 +5,7 @@ import useResourceStore from "../store/resourceStore";
 import toast, { Toaster } from "react-hot-toast";
 import { RoleContext } from "../App";
 import { useAuthStore } from "../store/authStore";
+import AppHeader from '../components/AppHeader';
 
 const BASE = "http://localhost:8081/api/v1";
 
@@ -40,9 +41,7 @@ const statusColor = {
 export default function CataloguePage() {
   const navigate = useNavigate();
   const { role, setRole } = useContext(RoleContext);
-  const { user, logoutUser } = useAuthStore();
-  const { filters, setFilters, resetFilters } = useResourceStore();
-  const { logoutUser: _l, user: _u } = useAuthStore();
+  const { } = useAuthStore();  const { filters, setFilters, resetFilters } = useResourceStore();
 
   const [view, setView] = useState("categories");
   const [selectedType, setSelectedType] = useState(null);
@@ -185,63 +184,7 @@ export default function CataloguePage() {
     <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
       <Toaster position="top-right" />
 
-      {/* Header */}
-      <header className="app-header">
-        <div className="app-logo" onClick={() => { setView("categories"); setSelectedType(null); }}>
-          UNI <span>Campus Hub</span>
-        </div>
-        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-
-          {/* User Info */}
-          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            {user?.profilePicture && (
-              <img src={user.profilePicture} alt="profile"
-                style={{ width: "32px", height: "32px", borderRadius: "50%", border: "2px solid #E87722" }} />
-            )}
-            <span style={{ fontSize: "13px", fontWeight: "600", color: "#333" }}>
-              {user?.name}
-            </span>
-            <span style={{
-              fontSize: "11px", padding: "2px 10px", borderRadius: "12px", fontWeight: "700",
-              background: role === "ADMIN" ? "#003366" : "#E87722", color: "#fff"
-            }}>
-              {role}
-            </span>
-            <button className="btn btn-secondary" style={{ fontSize: "12px", padding: "6px 12px" }}
-              onClick={() => { logoutUser(); window.location.href = "/login"; }}>
-              Logout
-            </button>
-          </div>
-
-          <button className="btn btn-secondary" onClick={() => navigate("/tickets")}>
-            🔧 Incident Tickets
-          </button>
-
-          {isAdmin && (
-            <button className="btn btn-secondary" onClick={() => navigate("/technicians")}>
-              👷 Manage Technicians
-            </button>
-          )}
-
-          {isAdmin && (
-            <>
-              <button className="btn btn-secondary" onClick={() => navigate("/admin/bookings")}>
-                📋 Manage Bookings
-              </button>
-              <button className="btn btn-secondary" onClick={() => navigate("/resource-groups")}>
-                Manage Groups
-              </button>
-              <button className="btn btn-primary" onClick={openAddModal}>+ Add Resource</button>
-            </>
-          )}
-
-          {!isAdmin && (
-            <button className="btn btn-secondary" onClick={() => navigate("/bookings")}>
-              📅 My Bookings
-            </button>
-          )}
-        </div>
-      </header>
+      <AppHeader />
 
       {/* Banner */}
       <div className="app-banner" style={{

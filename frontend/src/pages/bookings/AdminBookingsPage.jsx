@@ -4,7 +4,7 @@ import axios from "axios";
 import toast, { Toaster } from "react-hot-toast";
 import { RoleContext } from "../../App";
 import { useAuthStore } from "../../store/authStore";
-import NotificationBell from '../../components/NotificationBell';
+import AppHeader from '../../components/AppHeader';
 
 const API = "http://localhost:8081/api/v1";
 
@@ -33,7 +33,7 @@ function StatusBadge({ status }) {
 export default function AdminBookingsPage() {
   const navigate = useNavigate();
   const { role } = useContext(RoleContext);
-  const { user, logoutUser } = useAuthStore();
+  const { } = useAuthStore();
   const isAdmin = role === "ADMIN";
 
   const [bookings, setBookings] = useState([]);
@@ -100,52 +100,7 @@ export default function AdminBookingsPage() {
     <div style={{ minHeight: "100vh", background: "var(--bg)", fontFamily: "inherit" }}>
       <Toaster position="top-right" />
 
-      <header className="app-header">
-        <div className="app-logo" onClick={() => navigate("/")} style={{ flexShrink: 0 }}>
-          UNI <span>Campus Hub</span>
-        </div>
-
-        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-
-          {/* User Info */}
-          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            {user?.profilePicture && (
-              <img src={user.profilePicture} alt="profile"
-                style={{ width: "32px", height: "32px", borderRadius: "50%", border: "2px solid #E87722" }} />
-            )}
-            <span style={{ fontSize: "13px", fontWeight: "600", color: "#333" }}>
-              {user?.name}
-            </span>
-            <span style={{
-              fontSize: "11px", padding: "2px 10px", borderRadius: "12px", fontWeight: "700",
-              background: isAdmin ? "#003366" : "#E87722", color: "#fff"
-            }}>
-              {role}
-            </span>
-            <NotificationBell />
-            <button className="btn btn-secondary" style={{ fontSize: "12px", padding: "6px 12px" }}
-              onClick={() => { logoutUser(); window.location.href = "/login"; }}>
-              Logout
-            </button>
-          </div>
-
-          <button className="btn btn-secondary" onClick={() => navigate("/tickets")}>
-            🔧 Incident Tickets
-          </button>
-          <button className="btn btn-secondary" onClick={() => navigate("/technicians")}>
-            👷 Manage Technicians
-          </button>
-          <button className="btn btn-secondary" onClick={() => navigate("/admin/bookings")}>
-            📋 Manage Bookings
-          </button>
-          <button className="btn btn-secondary" onClick={() => navigate("/resource-groups")}>
-            🗂️ Manage Groups
-          </button>
-          <button className="btn btn-secondary" onClick={() => navigate("/")}>
-            ← Catalogue
-          </button>
-        </div>
-      </header>
+      <AppHeader />
 
       <div className="app-banner" style={{
         backgroundImage: "linear-gradient(rgba(0,51,102,0.92), rgba(0,51,102,0.75)), url('https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=1200&q=80')"
@@ -293,10 +248,6 @@ export default function AdminBookingsPage() {
         )}
       </div>
 
-      <footer className="app-footer">
-        © 2026 Smart Campus Operations Hub — Admin Booking Management
-      </footer>
-
       {rejectModal && (
         <div style={{
           position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)",
@@ -326,9 +277,7 @@ export default function AdminBookingsPage() {
           </div>
         </div>
       )}
-      <footer className="app-footer">
-        © 2026 Smart Campus Operations Hub
-      </footer>
+      <footer className="app-footer">© 2026 Smart Campus Operations Hub</footer>
     </div>
   );
 }
