@@ -3,6 +3,8 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import CataloguePage from './pages/CataloguePage';
 import ResourceDetailPage from './pages/ResourceDetailPage';
 import ResourceGroupPage from './pages/ResourceGroupPage';
+import BookingsPage from './pages/bookings/BookingsPage';
+import AdminBookingsPage from './pages/bookings/AdminBookingsPage';
 import LoginPage from './pages/LoginPage';
 import AuthCallback from './pages/AuthCallback';
 import { useAuthStore } from './store/authStore';
@@ -15,6 +17,11 @@ import CreateTicketPage from './pages/CreateTicketPage';
 import TicketStatsPage from './pages/TicketStatsPage';
 import TechniciansPage from './pages/TechniciansPage';
 import './global.css';
+import TicketsPage from './pages/TicketsPage';
+import TicketDetailPage from './pages/TicketDetailPage';
+import CreateTicketPage from './pages/CreateTicketPage';
+import TicketStatsPage from './pages/TicketStatsPage';
+import TechniciansPage from './pages/TechniciansPage';
 
 export const RoleContext = React.createContext('USER');
 

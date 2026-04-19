@@ -89,7 +89,7 @@ public class TicketService {
     public TicketResponseDTO getTicketById(Long id) {
         IncidentTicket ticket = ticketRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Ticket not found with id: " + id));
-        return toResponseDTO(ticket, true);
+        return toResponseDTO(ticket, true); // include comments + attachments
     }
 
     public Page<TicketResponseDTO> getTicketsByResource(Long resourceId, Pageable pageable) {
@@ -122,7 +122,6 @@ public class TicketService {
         TicketStatus newStatus = dto.getStatus();
         validateStatusTransition(ticket.getStatus(), newStatus);
 
-        // Track SLA timestamps
         if (newStatus == TicketStatus.IN_PROGRESS && ticket.getFirstResponseAt() == null) {
             ticket.setFirstResponseAt(LocalDateTime.now());
         }
@@ -207,24 +206,28 @@ public class TicketService {
     public Map<String, Object> getTicketStats() {
         Map<String, Object> stats = new LinkedHashMap<>();
 
+        // Status breakdown
         Map<String, Long> byStatus = new LinkedHashMap<>();
         for (TicketStatus s : TicketStatus.values()) {
             byStatus.put(s.name(), ticketRepository.countByStatus(s));
         }
         stats.put("byStatus", byStatus);
 
+        // Priority breakdown
         Map<String, Long> byPriority = new LinkedHashMap<>();
         for (TicketPriority p : TicketPriority.values()) {
             byPriority.put(p.name(), ticketRepository.countByPriority(p));
         }
         stats.put("byPriority", byPriority);
 
+        // Category breakdown
         Map<String, Long> byCategory = new LinkedHashMap<>();
         for (TicketCategory c : TicketCategory.values()) {
             byCategory.put(c.name(), ticketRepository.countByCategory(c));
         }
         stats.put("byCategory", byCategory);
 
+        // Technician workload
         List<Object[]> workload = ticketRepository.getTechnicianWorkload();
         Map<String, Long> techWorkload = new LinkedHashMap<>();
         for (Object[] row : workload) {
@@ -232,6 +235,7 @@ public class TicketService {
         }
         stats.put("technicianWorkload", techWorkload);
 
+        // Totals
         stats.put("totalTickets", ticketRepository.count());
         stats.put("openTickets", ticketRepository.countByStatus(TicketStatus.OPEN));
         stats.put("inProgressTickets", ticketRepository.countByStatus(TicketStatus.IN_PROGRESS));

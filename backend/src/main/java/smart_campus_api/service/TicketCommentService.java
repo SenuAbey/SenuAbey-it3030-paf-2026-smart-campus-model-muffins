@@ -68,6 +68,7 @@ public class TicketCommentService {
             throw new RuntimeException("Comment does not belong to ticket " + ticketId);
         }
 
+        // Only the comment owner can edit
         if (!comment.getCommentedBy().equals(dto.getCommentedBy())) {
             throw new RuntimeException("You do not have permission to edit this comment. Only the original author can edit.");
         }
@@ -87,6 +88,7 @@ public class TicketCommentService {
             throw new RuntimeException("Comment does not belong to ticket " + ticketId);
         }
 
+        // Only the comment owner or admin can delete
         if (!comment.getCommentedBy().equals(requestedBy) && !requestedBy.equals("admin")) {
             throw new RuntimeException("You do not have permission to delete this comment.");
         }

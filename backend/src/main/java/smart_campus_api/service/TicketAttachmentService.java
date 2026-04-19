@@ -102,6 +102,7 @@ public class TicketAttachmentService {
     }
 
     public List<AttachmentResponseDTO> getAttachmentsByTicket(Long ticketId) {
+        // Verify ticket exists
         ticketRepository.findById(ticketId)
                 .orElseThrow(() -> new RuntimeException("Ticket not found with id: " + ticketId));
 
@@ -119,16 +120,19 @@ public class TicketAttachmentService {
             throw new RuntimeException("Attachment does not belong to ticket " + ticketId);
         }
 
+        // Only the uploader or admin can delete
         if (!attachment.getUploadedBy().equals(requestedBy) && !requestedBy.equals("admin")) {
             throw new RuntimeException("You do not have permission to delete this attachment.");
         }
 
+        // Delete file from disk
         try {
             String fileUrl = attachment.getFileUrl();
             String filename = fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
             Path filePath = Paths.get(UPLOAD_DIR, filename);
             Files.deleteIfExists(filePath);
         } catch (IOException e) {
+            // Log but don't fail — still remove the DB record
             System.err.println("Warning: could not delete attachment file from disk: " + e.getMessage());
         }
 

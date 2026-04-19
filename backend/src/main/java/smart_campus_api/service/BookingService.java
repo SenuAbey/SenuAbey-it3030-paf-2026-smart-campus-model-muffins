@@ -35,7 +35,7 @@ public class BookingService {
             throw new RuntimeException("Resource is not available for booking");
         }
 
-        // Step 2.5: Check capacity
+        //  Step 2.5: Check capacity
         if (dto.getAttendees() != null && resource.getCapacity() != null
                 && dto.getAttendees() > resource.getCapacity()) {
             throw new RuntimeException(

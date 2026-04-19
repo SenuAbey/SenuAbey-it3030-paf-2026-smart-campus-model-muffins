@@ -1,10 +1,14 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import toast, { Toaster } from "react-hot-toast";
+import AppHeader from "../components/AppHeader";
+import "./tickets.css";
 
 const BASE = "http://localhost:8081/api/v1";
 const TIERS = ["INSTANT", "DELEGATED", "ADMIN"];
 
 export default function ResourceGroupPage() {
+  const navigate = useNavigate();
   const [groups, setGroups] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [editingGroup, setEditingGroup] = useState(null);
@@ -82,25 +86,32 @@ export default function ResourceGroupPage() {
   const tierBg = { INSTANT: "#E1F5EE", DELEGATED: "#FAEEDA", ADMIN: "#E6F1FB" };
 
   return (
-    <div style={{ padding: "24px", maxWidth: "1200px", margin: "0 auto", fontFamily: "sans-serif" }}>
+    <div style={{ minHeight: "100vh", background: "var(--bg, #f5f6fa)" }}>
       <Toaster position="top-right" />
+      <AppHeader />
 
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
-        <div>
-          <h1 style={{ fontSize: "22px", fontWeight: "600", margin: 0 }}>Resource Groups</h1>
-          <p style={{ fontSize: "13px", color: "#888", margin: "4px 0 0" }}>Manage asset categories and booking policies</p>
+      {/* ── Banner ──────────────────────────────────────────────────────── */}
+      <div className="app-banner" style={{
+        backgroundImage: "linear-gradient(rgba(0,51,102,0.88), rgba(0,83,160,0.88)), url('https://images.unsplash.com/photo-1560179707-f14e90ef3623?w=1200&q=80')"
+      }}>
+        <div style={{ fontSize: "12px", opacity: 0.7, marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.1em" }}>
+          Smart Campus Operations Hub
         </div>
-        <div style={{ display: "flex", gap: "10px" }}>
-          <button onClick={() => window.location.href = "/"} style={{
-            padding: "8px 16px", borderRadius: "8px", border: "1px solid #ddd",
-            background: "transparent", cursor: "pointer", fontSize: "13px"
-          }}>← Catalogue</button>
-          <button onClick={openAddModal} style={{
-            padding: "8px 20px", background: "#111", color: "#fff",
-            border: "none", borderRadius: "8px", cursor: "pointer", fontSize: "13px"
-          }}>+ Add Group</button>
-        </div>
+        <h1 style={{ fontSize: "36px", fontWeight: "300", margin: "0 0 8px", color: "#fff" }}>
+          Resource <strong style={{ fontWeight: "800" }}>Groups</strong>
+        </h1>
+        <p style={{ opacity: 0.8, margin: 0, fontSize: "15px", color: "#fff" }}>
+          Manage asset categories and booking policies
+        </p>
       </div>
+
+      <div style={{ padding: "24px", maxWidth: "1200px", margin: "0 auto", fontFamily: "sans-serif" }}>
+        {/* ── Add Group Button — mirroring New Ticket pattern ── */}
+        <div style={{ display: "flex", gap: 10, marginBottom: "1.25rem", flexWrap: "wrap" }}>
+          <button onClick={openAddModal} className="btn btn-orange">
+            + Add Group
+          </button>
+        </div>
 
       {groups.length === 0 ? (
         <div style={{ textAlign: "center", padding: "40px", color: "#888" }}>No groups yet. Create one!</div>
@@ -200,6 +211,10 @@ export default function ResourceGroupPage() {
           </div>
         </div>
       )}
+      </div>
+      <footer className="app-footer">
+        © 2026 Smart Campus Operations Hub
+      </footer>
     </div>
   );
 }

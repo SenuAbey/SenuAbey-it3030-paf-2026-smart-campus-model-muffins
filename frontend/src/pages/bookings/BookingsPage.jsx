@@ -4,10 +4,14 @@ import axios from "axios";
 import toast, { Toaster } from "react-hot-toast";
 import { RoleContext } from "../../App";
 import { useAuthStore } from "../../store/authStore";
-import NotificationBell from '../../components/NotificationBell';
+import AppHeader from "../../components/AppHeader";
 
 const API = "http://localhost:8081/api/v1";
 
+/**
+ * Returns axios config with JWT Authorization header.
+ * Called as a plain function (not a hook) so it's safe inside event handlers.
+ */
 function authConfig() {
   const token = useAuthStore.getState().token;
   return token ? { headers: { Authorization: `Bearer ${token}` } } : {};
@@ -102,11 +106,9 @@ function BookingCard({ booking, onCancel }) {
 export default function BookingsPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-
-  const { role } = useContext(RoleContext);
-  const { user, logoutUser } = useAuthStore();
+  const { role } = useContext(RoleContext);   // real role from Google OAuth — 'USER' or 'ADMIN'
+  const { user } = useAuthStore();
   const isAdmin = role === "ADMIN";
-
   const preselectedId = searchParams.get("resourceId") || "";
 
   const [resources, setResources] = useState([]);
@@ -117,18 +119,17 @@ export default function BookingsPage() {
   const [activeTab, setActiveTab] = useState("new");
 
   const [form, setForm] = useState({
-    resourceId: preselectedId, bookedBy: "", startTime: "", endTime: "", purpose: "", attendees: 1,
+    resourceId: preselectedId,
+    bookedBy: user?.email || "",   // pre-fill with logged-in user's email
+    startTime: "", endTime: "", purpose: "", attendees: 1,
   });
 
   useEffect(() => {
     axios.get(`${API}/resources?size=100`, authConfig())
       .then(r => setResources(r.data.content || r.data))
       .catch(() => {});
-    // Auto-fill email from logged in user
-    if (user?.email) {
-      setForm(f => ({ ...f, bookedBy: user.email }));
-    }
-  }, [user]);
+    if (form.bookedBy) fetchMyBookings();
+  }, []);
 
   const fetchMyBookings = async () => {
     if (!form.bookedBy) return;
@@ -141,7 +142,7 @@ export default function BookingsPage() {
 
   const handleSubmit = async () => {
     if (!form.resourceId) { toast.error("Please select a resource"); return; }
-    if (!form.bookedBy) { toast.error("Please enter your email"); return; }
+    if (!form.bookedBy)   { toast.error("Please enter your email"); return; }
     if (!form.startTime || !form.endTime) { toast.error("Please select start and end times"); return; }
     if (new Date(form.endTime) <= new Date(form.startTime)) { toast.error("End time must be after start time"); return; }
     if (!form.purpose.trim()) { toast.error("Please enter the purpose of booking"); return; }
@@ -180,67 +181,7 @@ export default function BookingsPage() {
     <div style={{ minHeight: "100vh", background: "var(--bg)", fontFamily: "inherit" }}>
       <Toaster position="top-right" />
 
-      <header className="app-header">
-        <div className="app-logo" onClick={() => navigate("/")} style={{ flexShrink: 0 }}>
-          UNI <span>Campus Hub</span>
-        </div>
-
-        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-
-          {/* User Info */}
-          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            {user?.profilePicture && (
-              <img src={user.profilePicture} alt="profile"
-                style={{ width: "32px", height: "32px", borderRadius: "50%", border: "2px solid #E87722" }} />
-            )}
-            <span style={{ fontSize: "13px", fontWeight: "600", color: "#333" }}>
-              {user?.name}
-            </span>
-            <span style={{
-              fontSize: "11px", padding: "2px 10px", borderRadius: "12px", fontWeight: "700",
-              background: isAdmin ? "#003366" : "#E87722", color: "#fff"
-            }}>
-              {role}
-            </span>
-            <NotificationBell />
-            <button className="btn btn-secondary" style={{ fontSize: "12px", padding: "6px 12px" }}
-              onClick={() => { logoutUser(); window.location.href = "/login"; }}>
-              Logout
-            </button>
-          </div>
-
-          <button className="btn btn-secondary" onClick={() => navigate("/tickets")}>
-            🔧 Incident Tickets
-          </button>
-
-          {isAdmin && (
-            <button className="btn btn-secondary" onClick={() => navigate("/technicians")}>
-              👷 Manage Technicians
-            </button>
-          )}
-
-          {isAdmin && (
-            <>
-              <button className="btn btn-secondary" onClick={() => navigate("/admin/bookings")}>
-                📋 Manage Bookings
-              </button>
-              <button className="btn btn-secondary" onClick={() => navigate("/resource-groups")}>
-                🗂️ Manage Groups
-              </button>
-            </>
-          )}
-
-          {!isAdmin && (
-            <button className="btn btn-secondary" onClick={() => navigate("/bookings")}>
-              📅 My Bookings
-            </button>
-          )}
-
-          <button className="btn btn-secondary" onClick={() => navigate("/")}>
-            ← Catalogue
-          </button>
-        </div>
-      </header>
+      <AppHeader />
 
       <div className="app-banner" style={{
         backgroundImage: "linear-gradient(rgba(0,51,102,0.88), rgba(0,83,160,0.88)), url('https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=1200&q=80')"
@@ -258,6 +199,7 @@ export default function BookingsPage() {
 
       <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "30px 20px" }}>
 
+        {/* Stats */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px", marginBottom: "28px" }}>
           {Object.entries(STATUS_META).map(([status, meta]) => (
             <div key={status} style={{
@@ -276,6 +218,7 @@ export default function BookingsPage() {
           ))}
         </div>
 
+        {/* Tabs */}
         <div style={{ display: "flex", gap: "4px", marginBottom: "24px", background: "#fff", padding: "4px", borderRadius: "10px", border: "1px solid #eee", width: "fit-content" }}>
           {[{ key: "new", label: "📅 New Booking" }, { key: "mine", label: `📋 My Bookings (${bookings.length})` }].map(tab => (
             <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{
@@ -287,6 +230,7 @@ export default function BookingsPage() {
           ))}
         </div>
 
+        {/* ── NEW BOOKING FORM ── */}
         {activeTab === "new" && (
           <div style={{ display: "grid", gridTemplateColumns: "1fr 340px", gap: "24px", alignItems: "start" }}>
             <div style={{ background: "#fff", borderRadius: "12px", border: "1px solid #eee", overflow: "hidden", boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
@@ -366,6 +310,7 @@ export default function BookingsPage() {
               </div>
             </div>
 
+            {/* Side panel */}
             <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
               {selectedResource ? (
                 <div style={{ background: "#fff", borderRadius: "12px", border: "1px solid #eee", overflow: "hidden", boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
@@ -421,6 +366,7 @@ export default function BookingsPage() {
           </div>
         )}
 
+        {/* ── MY BOOKINGS ── */}
         {activeTab === "mine" && (
           <div>
             <div style={{
@@ -488,7 +434,6 @@ export default function BookingsPage() {
           </div>
         )}
       </div>
-
       <footer className="app-footer">© 2026 Smart Campus Operations Hub</footer>
     </div>
   );

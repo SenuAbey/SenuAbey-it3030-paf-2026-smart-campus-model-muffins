@@ -1,24 +1,25 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 
 export default function LoginPage() {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setTimeout(() => setMounted(true), 50);
+  }, []);
+
   return (
     <div style={{
       minHeight: '100vh',
-      background: 'linear-gradient(rgba(0,51,102,0.92), rgba(0,83,160,0.92)), url("https://images.unsplash.com/photo-1541339907198-e08756ebafe3?w=1200&q=80")',
-      backgroundSize: 'cover',
-      backgroundPosition: 'center',
       display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
+      fontFamily: "'Georgia', 'Times New Roman', serif",
+      overflow: 'hidden',
     }}>
+
+      {/* ── LEFT PANEL — Photo + Brand ─────────────────────────────── */}
       <div style={{
-        background: '#fff',
-        borderRadius: '16px',
-        padding: '48px 40px',
-        width: '100%',
-        maxWidth: '420px',
-        textAlign: 'center',
-        boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+        flex: '0 0 58%',
+        position: 'relative',
+        overflow: 'hidden',
       }}>
         {/* Logo */}
         <div style={{ fontSize: '28px', fontWeight: '800', marginBottom: '8px' }}>

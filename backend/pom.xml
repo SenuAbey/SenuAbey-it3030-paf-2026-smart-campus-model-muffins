@@ -46,7 +46,7 @@
 			<artifactId>spring-boot-starter-validation</artifactId>
 		</dependency>
 
-		<!-- Security -->
+		<!-- Security + OAuth2 -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-security</artifactId>

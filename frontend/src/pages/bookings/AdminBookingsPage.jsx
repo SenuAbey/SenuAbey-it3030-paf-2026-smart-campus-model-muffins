@@ -5,6 +5,7 @@ import toast, { Toaster } from "react-hot-toast";
 import { RoleContext } from "../../App";
 import { useAuthStore } from "../../store/authStore";
 import NotificationBell from '../../components/NotificationBell';
+import AppHeader from "../../components/AppHeader";
 
 const API = "http://localhost:8081/api/v1";
 
@@ -32,8 +33,8 @@ function StatusBadge({ status }) {
 
 export default function AdminBookingsPage() {
   const navigate = useNavigate();
-  const { role } = useContext(RoleContext);
-  const { user, logoutUser } = useAuthStore();
+  const { role } = useContext(RoleContext);   // real role from Google OAuth
+  const { user } = useAuthStore();
   const isAdmin = role === "ADMIN";
 
   const [bookings, setBookings] = useState([]);
@@ -44,7 +45,11 @@ export default function AdminBookingsPage() {
   const [rejectReason, setRejectReason] = useState("");
   const [processingId, setProcessingId] = useState(null);
 
-  useEffect(() => { fetchAll(); }, []);
+  useEffect(() => {
+    // Redirect non-admins away
+    if (!isAdmin) { navigate("/bookings"); return; }
+    fetchAll();
+  }, [isAdmin]);
 
   const fetchAll = async () => {
     setLoading(true);
@@ -96,57 +101,12 @@ export default function AdminBookingsPage() {
     <div style={{ minHeight: "100vh", background: "var(--bg)", fontFamily: "inherit" }}>
       <Toaster position="top-right" />
 
-      <header className="app-header">
-        <div className="app-logo" onClick={() => navigate("/")} style={{ flexShrink: 0 }}>
-          UNI <span>Campus Hub</span>
-        </div>
-
-        <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-
-          {/* User Info */}
-          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            {user?.profilePicture && (
-              <img src={user.profilePicture} alt="profile"
-                style={{ width: "32px", height: "32px", borderRadius: "50%", border: "2px solid #E87722" }} />
-            )}
-            <span style={{ fontSize: "13px", fontWeight: "600", color: "#333" }}>
-              {user?.name}
-            </span>
-            <span style={{
-              fontSize: "11px", padding: "2px 10px", borderRadius: "12px", fontWeight: "700",
-              background: isAdmin ? "#003366" : "#E87722", color: "#fff"
-            }}>
-              {role}
-            </span>
-            <NotificationBell />
-            <button className="btn btn-secondary" style={{ fontSize: "12px", padding: "6px 12px" }}
-              onClick={() => { logoutUser(); window.location.href = "/login"; }}>
-              Logout
-            </button>
-          </div>
-
-          <button className="btn btn-secondary" onClick={() => navigate("/tickets")}>
-            🔧 Incident Tickets
-          </button>
-          <button className="btn btn-secondary" onClick={() => navigate("/technicians")}>
-            👷 Manage Technicians
-          </button>
-          <button className="btn btn-secondary" onClick={() => navigate("/admin/bookings")}>
-            📋 Manage Bookings
-          </button>
-          <button className="btn btn-secondary" onClick={() => navigate("/resource-groups")}>
-            🗂️ Manage Groups
-          </button>
-          <button className="btn btn-secondary" onClick={() => navigate("/")}>
-            ← Catalogue
-          </button>
-        </div>
-      </header>
+      <AppHeader />
 
       <div className="app-banner" style={{
         backgroundImage: "linear-gradient(rgba(0,51,102,0.92), rgba(0,51,102,0.75)), url('https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=1200&q=80')"
       }}>
-        <div style={{ fontSize: "12px", opacity: 0.7, marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.1em" }}>Admin Panel</div>
+        <div style={{ fontSize: "12px", opacity: 0.7, marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.1em" }}>Admin Panel — Module B</div>
         <h1 style={{ fontSize: "36px", fontWeight: "300", margin: "0 0 8px", color: "#fff" }}>
           Booking <strong style={{ fontWeight: "800" }}>Administration</strong>
         </h1>
@@ -162,6 +122,7 @@ export default function AdminBookingsPage() {
 
       <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "30px 20px" }}>
 
+        {/* Stats */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px", marginBottom: "28px" }}>
           {Object.entries(STATUS_META).map(([status, meta]) => (
             <div key={status} style={{
@@ -180,6 +141,7 @@ export default function AdminBookingsPage() {
           ))}
         </div>
 
+        {/* Toolbar */}
         <div style={{ display: "flex", gap: "12px", marginBottom: "20px", flexWrap: "wrap", alignItems: "center" }}>
           <input
             placeholder="Search resource, user, purpose..."
@@ -211,6 +173,7 @@ export default function AdminBookingsPage() {
           }}>↻ Refresh</button>
         </div>
 
+        {/* Table */}
         {loading ? (
           <div style={{ textAlign: "center", padding: "60px", color: "#aaa" }}>Loading bookings...</div>
         ) : filtered.length === 0 ? (
@@ -227,13 +190,8 @@ export default function AdminBookingsPage() {
               borderBottom: "1px solid #eee", fontSize: "11px", fontWeight: "700",
               color: "#aaa", textTransform: "uppercase", letterSpacing: "0.05em"
             }}>
-              <span>Resource</span>
-              <span>Booked By</span>
-              <span>Start Time</span>
-              <span>End Time</span>
-              <span>Pax</span>
-              <span>Status</span>
-              <span>Actions</span>
+              <span>Resource</span><span>Booked By</span><span>Start Time</span>
+              <span>End Time</span><span>Pax</span><span>Status</span><span>Actions</span>
             </div>
 
             {filtered.map((b, i) => {
@@ -245,8 +203,7 @@ export default function AdminBookingsPage() {
                   display: "grid",
                   gridTemplateColumns: "2fr 1.5fr 1.8fr 1.8fr 80px 80px 160px",
                   padding: "14px 20px", borderBottom: i < filtered.length - 1 ? "1px solid #f5f5f5" : "none",
-                  alignItems: "center", transition: "background 0.1s",
-                  background: b.status === "PENDING" ? "#FFFDF5" : "#fff",
+                  alignItems: "center", background: b.status === "PENDING" ? "#FFFDF5" : "#fff",
                 }}
                   onMouseEnter={e => e.currentTarget.style.background = "#fafcff"}
                   onMouseLeave={e => e.currentTarget.style.background = b.status === "PENDING" ? "#FFFDF5" : "#fff"}
@@ -295,10 +252,9 @@ export default function AdminBookingsPage() {
         )}
       </div>
 
-      <footer className="app-footer">
-        © 2026 Smart Campus Operations Hub — Admin Booking Management
-      </footer>
 
+
+      {/* Reject Modal */}
       {rejectModal && (
         <div style={{
           position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)",
@@ -310,9 +266,12 @@ export default function AdminBookingsPage() {
             <label style={{ display: "block", fontSize: "12px", fontWeight: "600", color: "#555", marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
               Rejection Reason *
             </label>
-            <textarea value={rejectReason} onChange={e => setRejectReason(e.target.value)}
-              placeholder="e.g. Resource not available for this time slot..."
-              rows={3} className="form-input"
+            <textarea
+              value={rejectReason}
+              onChange={e => setRejectReason(e.target.value)}
+              placeholder="e.g. Resource not available for this time slot, conflicting event scheduled..."
+              rows={3}
+              className="form-input"
               style={{ resize: "vertical", fontSize: "13px", padding: "10px 12px" }}
             />
             <div style={{ display: "flex", gap: "10px", marginTop: "20px", justifyContent: "flex-end" }}>
@@ -328,6 +287,9 @@ export default function AdminBookingsPage() {
           </div>
         </div>
       )}
+      <footer className="app-footer">
+        © 2026 Smart Campus Operations Hub
+      </footer>
     </div>
   );
 }
