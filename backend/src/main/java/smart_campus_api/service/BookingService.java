@@ -22,6 +22,9 @@ public class BookingService {
     @Autowired
     private ResourceRepository resourceRepository;
 
+    @Autowired
+    private NotificationService notificationService;
+
     public BookingResponseDTO createBooking(BookingRequestDTO dto) {
         // 1. Find the resource
         Resource resource = resourceRepository.findById(dto.getResourceId())
@@ -32,14 +35,13 @@ public class BookingService {
             throw new RuntimeException("Resource is not available for booking");
         }
 
-        //  Step 2.5: Check capacity
+        // Step 2.5: Check capacity
         if (dto.getAttendees() != null && resource.getCapacity() != null
                 && dto.getAttendees() > resource.getCapacity()) {
             throw new RuntimeException(
                     "Number of attendees (" + dto.getAttendees() + ") exceeds resource capacity (" + resource.getCapacity() + ")"
             );
         }
-
 
         // 3. Check for scheduling conflicts
         List<Booking> conflicts = bookingRepository.findConflictingBookings(
@@ -59,7 +61,9 @@ public class BookingService {
         booking.setAttendees(dto.getAttendees());
         booking.setStatus(BookingStatus.PENDING);
 
-        return toDTO(bookingRepository.save(booking));
+        BookingResponseDTO result = toDTO(bookingRepository.save(booking));
+        notificationService.notifyAdminsNewBooking(dto.getBookedBy(), resource.getName());
+        return result;
     }
 
     public List<BookingResponseDTO> getAllBookings() {
@@ -80,7 +84,9 @@ public class BookingService {
         Booking booking = bookingRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Booking not found"));
         booking.setStatus(BookingStatus.APPROVED);
-        return toDTO(bookingRepository.save(booking));
+        BookingResponseDTO result = toDTO(bookingRepository.save(booking));
+        notificationService.notifyUserBookingApproved(booking.getBookedBy(), booking.getResource().getName());
+        return result;
     }
 
     public BookingResponseDTO rejectBooking(Long id, String reason) {
@@ -88,7 +94,9 @@ public class BookingService {
                 .orElseThrow(() -> new RuntimeException("Booking not found"));
         booking.setStatus(BookingStatus.REJECTED);
         booking.setRejectionReason(reason);
-        return toDTO(bookingRepository.save(booking));
+        BookingResponseDTO result = toDTO(bookingRepository.save(booking));
+        notificationService.notifyUserBookingRejected(booking.getBookedBy(), booking.getResource().getName(), reason);
+        return result;
     }
 
     public BookingResponseDTO cancelBooking(Long id) {

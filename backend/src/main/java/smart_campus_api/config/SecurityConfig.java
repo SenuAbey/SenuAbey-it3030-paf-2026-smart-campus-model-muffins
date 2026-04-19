@@ -74,6 +74,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/v1/auth/me").authenticated()
                         .requestMatchers("/api/v1/auth/logout").authenticated()
                         .requestMatchers("/api/v1/auth/users/**").hasRole("ADMIN")
+                        .requestMatchers("/api/v1/notifications/**").authenticated()
 
                         // All write operations require auth
                         .requestMatchers(HttpMethod.POST, "/api/v1/**").authenticated()

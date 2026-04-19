@@ -78,9 +78,7 @@ export default function LoginPage() {
           Sign in with Google
         </button>
 
-        <p style={{ fontSize: '12px', color: '#aaa', marginTop: '24px' }}>
-          Only university accounts are authorized to access this system
-        </p>
+        
       </div>
     </div>
   );

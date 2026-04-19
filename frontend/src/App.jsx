@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import CataloguePage from './pages/CataloguePage';
 import ResourceDetailPage from './pages/ResourceDetailPage';
@@ -18,17 +18,21 @@ import TechniciansPage from './pages/TechniciansPage';
 
 export const RoleContext = React.createContext('USER');
 
-function ProtectedRoute({ children }) {
+// ─── Protected Route ──────────────────────────────────────────────────────────
+// - If no token → redirect to /login
+// - If requiredRole is set and role doesn't match → redirect to /
+function ProtectedRoute({ children, requiredRole }) {
   const { token } = useAuthStore();
+  const { role } = useContext(RoleContext);
+
   if (!token) return <Navigate to="/login" />;
+  if (requiredRole && role !== requiredRole) return <Navigate to="/" />;
   return children;
 }
 
+// ─── App ──────────────────────────────────────────────────────────────────────
 function App() {
-  const { token, setUser } = useAuthStore();
-  // Role comes from the JWT user object returned by /auth/me.
-  // Use 'USER' (not 'STUDENT') to match the role strings from the backend.
-  const [role, setRole] = useState('USER');
+  const { token, setUser, role, setRole } = useAuthStore(); // role now comes from store (persisted)
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -36,7 +40,7 @@ function App() {
       getMe()
         .then(res => {
           setUser(res.data);
-          setRole(res.data.role);
+          setRole(res.data.role); // persists role to localStorage via store
         })
         .catch(() => {})
         .finally(() => setLoading(false));
@@ -60,30 +64,21 @@ function App() {
     <RoleContext.Provider value={{ role, setRole }}>
       <BrowserRouter>
         <Routes>
-          {/* Public routes */}
+
+          {/* ── Public routes ───────────────────────────────────────── */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
 
-          {/* Protected routes — catalogue & resources */}
+          {/* ── Shared protected routes (any logged-in user) ─────────── */}
           <Route path="/" element={
             <ProtectedRoute><CataloguePage /></ProtectedRoute>
           } />
           <Route path="/resources/:id" element={
             <ProtectedRoute><ResourceDetailPage /></ProtectedRoute>
           } />
-          <Route path="/resource-groups" element={
-            <ProtectedRoute><ResourceGroupPage /></ProtectedRoute>
-          } />
-
-          {/* Protected routes — bookings (added from feature branch) */}
           <Route path="/bookings" element={
             <ProtectedRoute><BookingsPage /></ProtectedRoute>
           } />
-          <Route path="/admin/bookings" element={
-            <ProtectedRoute><AdminBookingsPage /></ProtectedRoute>
-          } />
-
-          {/* Protected routes — tickets */}
           <Route path="/tickets" element={
             <ProtectedRoute><TicketsPage /></ProtectedRoute>
           } />
@@ -96,9 +91,18 @@ function App() {
           <Route path="/tickets/:id" element={
             <ProtectedRoute><TicketDetailPage /></ProtectedRoute>
           } />
-          <Route path="/technicians" element={
-            <ProtectedRoute><TechniciansPage /></ProtectedRoute>
+
+          {/* ── Admin-only protected routes ──────────────────────────── */}
+          <Route path="/resource-groups" element={
+            <ProtectedRoute requiredRole="ADMIN"><ResourceGroupPage /></ProtectedRoute>
           } />
+          <Route path="/admin/bookings" element={
+            <ProtectedRoute requiredRole="ADMIN"><AdminBookingsPage /></ProtectedRoute>
+          } />
+          <Route path="/technicians" element={
+            <ProtectedRoute requiredRole="ADMIN"><TechniciansPage /></ProtectedRoute>
+          } />
+
         </Routes>
       </BrowserRouter>
     </RoleContext.Provider>

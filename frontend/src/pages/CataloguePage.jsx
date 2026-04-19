@@ -4,6 +4,7 @@ import { getResources, deleteResource, updateResourceStatus, getResourceStats } 
 import useResourceStore from "../store/resourceStore";
 import toast, { Toaster } from "react-hot-toast";
 import { RoleContext } from "../App";
+import { useAuthStore } from "../store/authStore";
 
 const BASE = "http://localhost:8081/api/v1";
 
@@ -39,6 +40,7 @@ const statusColor = {
 export default function CataloguePage() {
   const navigate = useNavigate();
   const { role, setRole } = useContext(RoleContext);
+  const { user, logoutUser } = useAuthStore();
   const { filters, setFilters, resetFilters } = useResourceStore();
   const [view, setView] = useState("categories");
   const [selectedType, setSelectedType] = useState(null);
@@ -187,14 +189,25 @@ export default function CataloguePage() {
           UNI <span>Campus Hub</span>
         </div>
         <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-          {/* Role Toggle — Member 1's original logic */}
-          <div className="role-toggle">
-            {/* FIX: Role enum is USER/ADMIN/TECHNICIAN — "STUDENT" does not exist */}
-            <button className={`role-btn ${role === "USER" ? "active" : ""}`} onClick={() => setRole("USER")}>
-              👤 User
-            </button>
-            <button className={`role-btn ${role === "ADMIN" ? "active" : ""}`} onClick={() => setRole("ADMIN")}>
-              ⚙️ Admin
+
+          {/* User Info */}
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            {user?.profilePicture && (
+              <img src={user.profilePicture} alt="profile"
+                style={{ width: "32px", height: "32px", borderRadius: "50%", border: "2px solid #E87722" }} />
+            )}
+            <span style={{ fontSize: "13px", fontWeight: "600", color: "#333" }}>
+              {user?.name}
+            </span>
+            <span style={{
+              fontSize: "11px", padding: "2px 10px", borderRadius: "12px", fontWeight: "700",
+              background: role === "ADMIN" ? "#003366" : "#E87722", color: "#fff"
+            }}>
+              {role}
+            </span>
+            <button className="btn btn-secondary" style={{ fontSize: "12px", padding: "6px 12px" }}
+              onClick={() => { logoutUser(); window.location.href = "/login"; }}>
+              Logout
             </button>
           </div>
 
@@ -202,14 +215,12 @@ export default function CataloguePage() {
             🔧 Incident Tickets
           </button>
 
-         
           {isAdmin && (
             <button className="btn btn-secondary" onClick={() => navigate("/technicians")}>
               👷 Manage Technicians
             </button>
           )}
 
-          {/* Admin-only nav buttons */}
           {isAdmin && (
             <>
               <button className="btn btn-secondary" onClick={() => navigate("/admin/bookings")}>
@@ -222,7 +233,6 @@ export default function CataloguePage() {
             </>
           )}
 
-          {/* Student-only nav button */}
           {!isAdmin && (
             <button className="btn btn-secondary" onClick={() => navigate("/bookings")}>
               📅 My Bookings
@@ -380,7 +390,6 @@ export default function CataloguePage() {
                         </div>
                       )}
 
-                      {/* Student view - View & Book goes to resource detail page */}
                       {!isAdmin && r.status === "ACTIVE" && (
                         <button onClick={(e) => { e.stopPropagation(); navigate(`/resources/${r.id}`); }}
                           className="btn btn-primary" style={{ width: "100%", marginTop: "12px" }}>

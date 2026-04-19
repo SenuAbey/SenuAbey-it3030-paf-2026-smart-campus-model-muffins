@@ -4,14 +4,10 @@ import axios from "axios";
 import toast, { Toaster } from "react-hot-toast";
 import { RoleContext } from "../../App";
 import { useAuthStore } from "../../store/authStore";
+import NotificationBell from '../../components/NotificationBell';
 
 const API = "http://localhost:8081/api/v1";
 
-/**
- * Helper: returns an axios config object with the JWT Authorization header.
- * Needed because this file uses raw axios (not the resourceApi instance),
- * and the backend requires authentication on all booking endpoints.
- */
 function authConfig() {
   const token = useAuthStore.getState().token;
   return token ? { headers: { Authorization: `Bearer ${token}` } } : {};
@@ -106,8 +102,11 @@ function BookingCard({ booking, onCancel }) {
 export default function BookingsPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  // FIX: role values come from JWT as 'USER' / 'ADMIN', not 'STUDENT' / 'ADMIN'
-  const { role, setRole } = useContext(RoleContext);
+
+  const { role } = useContext(RoleContext);
+  const { user, logoutUser } = useAuthStore();
+  const isAdmin = role === "ADMIN";
+
   const preselectedId = searchParams.get("resourceId") || "";
 
   const [resources, setResources] = useState([]);
@@ -125,8 +124,11 @@ export default function BookingsPage() {
     axios.get(`${API}/resources?size=100`, authConfig())
       .then(r => setResources(r.data.content || r.data))
       .catch(() => {});
-    fetchMyBookings();
-  }, []);
+    // Auto-fill email from logged in user
+    if (user?.email) {
+      setForm(f => ({ ...f, bookedBy: user.email }));
+    }
+  }, [user]);
 
   const fetchMyBookings = async () => {
     if (!form.bookedBy) return;
@@ -179,21 +181,64 @@ export default function BookingsPage() {
       <Toaster position="top-right" />
 
       <header className="app-header">
-        <div className="app-logo" onClick={() => navigate("/")}>UNI <span>Campus Hub</span></div>
+        <div className="app-logo" onClick={() => navigate("/")} style={{ flexShrink: 0 }}>
+          UNI <span>Campus Hub</span>
+        </div>
+
         <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-          {/* FIX: role toggle now uses 'USER' (not 'STUDENT') to match JWT role values */}
-          <div className="role-toggle">
-            <button className={`role-btn ${role === "USER" ? "active" : ""}`} onClick={() => setRole("USER")}>
-              👤 User
-            </button>
-            <button className={`role-btn ${role === "ADMIN" ? "active" : ""}`} onClick={() => {
-              setRole("ADMIN");
-              navigate("/admin/bookings");
+
+          {/* User Info */}
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            {user?.profilePicture && (
+              <img src={user.profilePicture} alt="profile"
+                style={{ width: "32px", height: "32px", borderRadius: "50%", border: "2px solid #E87722" }} />
+            )}
+            <span style={{ fontSize: "13px", fontWeight: "600", color: "#333" }}>
+              {user?.name}
+            </span>
+            <span style={{
+              fontSize: "11px", padding: "2px 10px", borderRadius: "12px", fontWeight: "700",
+              background: isAdmin ? "#003366" : "#E87722", color: "#fff"
             }}>
-              ⚙️ Admin
+              {role}
+            </span>
+            <NotificationBell />
+            <button className="btn btn-secondary" style={{ fontSize: "12px", padding: "6px 12px" }}
+              onClick={() => { logoutUser(); window.location.href = "/login"; }}>
+              Logout
             </button>
           </div>
-          <button className="btn btn-secondary" onClick={() => navigate("/")}>← Catalogue</button>
+
+          <button className="btn btn-secondary" onClick={() => navigate("/tickets")}>
+            🔧 Incident Tickets
+          </button>
+
+          {isAdmin && (
+            <button className="btn btn-secondary" onClick={() => navigate("/technicians")}>
+              👷 Manage Technicians
+            </button>
+          )}
+
+          {isAdmin && (
+            <>
+              <button className="btn btn-secondary" onClick={() => navigate("/admin/bookings")}>
+                📋 Manage Bookings
+              </button>
+              <button className="btn btn-secondary" onClick={() => navigate("/resource-groups")}>
+                🗂️ Manage Groups
+              </button>
+            </>
+          )}
+
+          {!isAdmin && (
+            <button className="btn btn-secondary" onClick={() => navigate("/bookings")}>
+              📅 My Bookings
+            </button>
+          )}
+
+          <button className="btn btn-secondary" onClick={() => navigate("/")}>
+            ← Catalogue
+          </button>
         </div>
       </header>
 
@@ -213,7 +258,6 @@ export default function BookingsPage() {
 
       <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "30px 20px" }}>
 
-        {/* Stats */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px", marginBottom: "28px" }}>
           {Object.entries(STATUS_META).map(([status, meta]) => (
             <div key={status} style={{
@@ -232,7 +276,6 @@ export default function BookingsPage() {
           ))}
         </div>
 
-        {/* Tabs */}
         <div style={{ display: "flex", gap: "4px", marginBottom: "24px", background: "#fff", padding: "4px", borderRadius: "10px", border: "1px solid #eee", width: "fit-content" }}>
           {[{ key: "new", label: "📅 New Booking" }, { key: "mine", label: `📋 My Bookings (${bookings.length})` }].map(tab => (
             <button key={tab.key} onClick={() => setActiveTab(tab.key)} style={{
@@ -244,7 +287,6 @@ export default function BookingsPage() {
           ))}
         </div>
 
-        {/* ── NEW BOOKING FORM ── */}
         {activeTab === "new" && (
           <div style={{ display: "grid", gridTemplateColumns: "1fr 340px", gap: "24px", alignItems: "start" }}>
             <div style={{ background: "#fff", borderRadius: "12px", border: "1px solid #eee", overflow: "hidden", boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
@@ -253,22 +295,16 @@ export default function BookingsPage() {
                 <div style={{ fontSize: "12px", opacity: 0.8, marginTop: "3px" }}>Fill in all required fields to submit your booking</div>
               </div>
               <div style={{ padding: "24px", display: "flex", flexDirection: "column", gap: "16px" }}>
-
                 <div>
                   <label className="form-label">Resource *</label>
-                  <select
-                      value={form.resourceId}
-                      onChange={e => setForm(f => ({ ...f, resourceId: e.target.value }))}
-                      className="form-input"
-                    >
-                      <option value="">— Select a resource —</option>
-                      {resources.map(r => (
-                        <option key={r.id} value={r.id} disabled={r.status !== "ACTIVE"}>
-                          {r.name} ({r.type?.replace(/_/g, " ")})
-                          {r.status !== "ACTIVE" ? ` — ${r.status}` : ""}
-                        </option>
-                      ))}
-                    </select>
+                  <select value={form.resourceId} onChange={e => setForm(f => ({ ...f, resourceId: e.target.value }))} className="form-input">
+                    <option value="">— Select a resource —</option>
+                    {resources.map(r => (
+                      <option key={r.id} value={r.id} disabled={r.status !== "ACTIVE"}>
+                        {r.name} ({r.type?.replace(/_/g, " ")}){r.status !== "ACTIVE" ? ` — ${r.status}` : ""}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
                 <div>
@@ -330,7 +366,6 @@ export default function BookingsPage() {
               </div>
             </div>
 
-            {/* Side panel */}
             <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
               {selectedResource ? (
                 <div style={{ background: "#fff", borderRadius: "12px", border: "1px solid #eee", overflow: "hidden", boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
@@ -386,7 +421,6 @@ export default function BookingsPage() {
           </div>
         )}
 
-        {/* ── MY BOOKINGS ── */}
         {activeTab === "mine" && (
           <div>
             <div style={{
