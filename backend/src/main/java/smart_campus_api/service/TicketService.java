@@ -122,7 +122,6 @@ public class TicketService {
         TicketStatus newStatus = dto.getStatus();
         validateStatusTransition(ticket.getStatus(), newStatus);
 
-        // Track SLA timestamps
         if (newStatus == TicketStatus.IN_PROGRESS && ticket.getFirstResponseAt() == null) {
             ticket.setFirstResponseAt(LocalDateTime.now());
         }

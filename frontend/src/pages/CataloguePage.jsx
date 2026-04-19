@@ -303,7 +303,6 @@ export default function CataloguePage() {
           </div>
         )}
 
-        {/* Categories View */}
         {view === "categories" && (
           <div className="card-grid">
             {RESOURCE_TYPES.filter(t => categoryCounts[t] > 0).map(type => {
@@ -326,7 +325,6 @@ export default function CataloguePage() {
           </div>
         )}
 
-        {/* Resources View */}
         {view === "resources" && (
           <>
             <div className="filters-bar">
@@ -389,7 +387,6 @@ export default function CataloguePage() {
                         </span>
                       </div>
 
-                      {/* Admin only actions */}
                       {isAdmin && (
                         <div style={{ display: "flex", gap: "6px", marginTop: "12px" }}>
                           <button onClick={(e) => openEditModal(r, e)} className="btn btn-secondary" style={{ flex: 1, fontSize: "12px", padding: "5px" }}>Edit</button>

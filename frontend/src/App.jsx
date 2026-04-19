@@ -9,12 +9,12 @@ import LoginPage from './pages/LoginPage';
 import AuthCallback from './pages/AuthCallback';
 import { useAuthStore } from './store/authStore';
 import { getMe } from './api/authApi';
-import './global.css';
 import TicketsPage from './pages/TicketsPage';
 import TicketDetailPage from './pages/TicketDetailPage';
 import CreateTicketPage from './pages/CreateTicketPage';
 import TicketStatsPage from './pages/TicketStatsPage';
 import TechniciansPage from './pages/TechniciansPage';
+import './global.css';
 
 export const RoleContext = React.createContext('USER');
 

@@ -2,6 +2,7 @@ import { useContext } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { RoleContext } from '../App';
 import { useAuthStore } from '../store/authStore';
+import NotificationBell from './NotificationBell';
 
 export default function AppHeader({ extraNavButtons }) {
   const navigate = useNavigate();
@@ -62,7 +63,7 @@ export default function AppHeader({ extraNavButtons }) {
           <span style={{ fontSize: 28, fontWeight: 300, color: '#F39200', marginLeft: 7, letterSpacing: '-0.5px' }}>Campus Hub</span>
         </div>
 
-        {/* Right: user card + logout */}
+        {/* Right: user card + notification bell + logout */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
 
           {/* User card */}
@@ -111,6 +112,9 @@ export default function AppHeader({ extraNavButtons }) {
               </div>
             </div>
           )}
+
+          {/* 🔔 Notification Bell */}
+          <NotificationBell />
 
           {/* Logout button */}
           <button
