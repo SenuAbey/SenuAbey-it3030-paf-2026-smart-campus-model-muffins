@@ -117,7 +117,9 @@ export default function BookingsPage() {
   const [activeTab, setActiveTab] = useState("new");
 
   const [form, setForm] = useState({
-    resourceId: preselectedId, bookedBy: "", startTime: "", endTime: "", purpose: "", attendees: 1,
+    resourceId: preselectedId,
+    bookedBy: user?.email || "",   // pre-fill with logged-in user's email
+    startTime: "", endTime: "", purpose: "", attendees: 1,
   });
 
   useEffect(() => {
@@ -141,7 +143,7 @@ export default function BookingsPage() {
 
   const handleSubmit = async () => {
     if (!form.resourceId) { toast.error("Please select a resource"); return; }
-    if (!form.bookedBy) { toast.error("Please enter your email"); return; }
+    if (!form.bookedBy)   { toast.error("Please enter your email"); return; }
     if (!form.startTime || !form.endTime) { toast.error("Please select start and end times"); return; }
     if (new Date(form.endTime) <= new Date(form.startTime)) { toast.error("End time must be after start time"); return; }
     if (!form.purpose.trim()) { toast.error("Please enter the purpose of booking"); return; }
@@ -488,7 +490,6 @@ export default function BookingsPage() {
           </div>
         )}
       </div>
-
       <footer className="app-footer">© 2026 Smart Campus Operations Hub</footer>
     </div>
   );

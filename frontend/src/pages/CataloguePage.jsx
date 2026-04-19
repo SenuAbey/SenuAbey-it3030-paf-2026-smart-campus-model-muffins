@@ -42,6 +42,8 @@ export default function CataloguePage() {
   const { role, setRole } = useContext(RoleContext);
   const { user, logoutUser } = useAuthStore();
   const { filters, setFilters, resetFilters } = useResourceStore();
+  const { logoutUser: _l, user: _u } = useAuthStore();
+
   const [view, setView] = useState("categories");
   const [selectedType, setSelectedType] = useState(null);
   const [resources, setResources] = useState([]);
@@ -243,7 +245,7 @@ export default function CataloguePage() {
 
       {/* Banner */}
       <div className="app-banner" style={{
-        backgroundImage: "linear-gradient(rgba(0,51,102,0.88), rgba(0,83,160,0.88)), url('https://images.unsplash.com/photo-1541339907198-e08756ebafe3?w=1200&q=80')"
+        backgroundImage: "linear-gradient(rgba(0,51,102,0.88), rgba(0,83,160,0.88)), url('https://images.unsplash.com/photo-1497366216548-37526070297c?w=1200&q=80')"
       }}>
         {view === "categories" ? (
           <>
@@ -275,7 +277,16 @@ export default function CataloguePage() {
 
       <div style={{ maxWidth: "1400px", margin: "0 auto", padding: "30px 20px" }}>
 
-        {/* Stats - Admin only */}
+        {/* ── Add Resource Button (Admin only) — mirroring New Ticket pattern ── */}
+        {isAdmin && (
+          <div style={{ display: "flex", gap: 10, marginBottom: "1.25rem", flexWrap: "wrap" }}>
+            <button className="btn btn-orange" onClick={openAddModal}>
+              + Add Resource
+            </button>
+          </div>
+        )}
+
+        {/* Stats — Admin only */}
         {view === "categories" && isAdmin && stats && (
           <div className="stats-grid">
             {[
@@ -415,7 +426,7 @@ export default function CataloguePage() {
         © 2026 Smart Campus Operations Hub
       </footer>
 
-      {/* Modal - Admin only */}
+      {/* Modal — Admin only */}
       {showModal && isAdmin && (
         <div className="modal-overlay">
           <div className="modal">

@@ -44,7 +44,11 @@ export default function AdminBookingsPage() {
   const [rejectReason, setRejectReason] = useState("");
   const [processingId, setProcessingId] = useState(null);
 
-  useEffect(() => { fetchAll(); }, []);
+  useEffect(() => {
+    // Redirect non-admins away
+    if (!isAdmin) { navigate("/bookings"); return; }
+    fetchAll();
+  }, [isAdmin]);
 
   const fetchAll = async () => {
     setLoading(true);
@@ -227,13 +231,8 @@ export default function AdminBookingsPage() {
               borderBottom: "1px solid #eee", fontSize: "11px", fontWeight: "700",
               color: "#aaa", textTransform: "uppercase", letterSpacing: "0.05em"
             }}>
-              <span>Resource</span>
-              <span>Booked By</span>
-              <span>Start Time</span>
-              <span>End Time</span>
-              <span>Pax</span>
-              <span>Status</span>
-              <span>Actions</span>
+              <span>Resource</span><span>Booked By</span><span>Start Time</span>
+              <span>End Time</span><span>Pax</span><span>Status</span><span>Actions</span>
             </div>
 
             {filtered.map((b, i) => {
@@ -245,8 +244,7 @@ export default function AdminBookingsPage() {
                   display: "grid",
                   gridTemplateColumns: "2fr 1.5fr 1.8fr 1.8fr 80px 80px 160px",
                   padding: "14px 20px", borderBottom: i < filtered.length - 1 ? "1px solid #f5f5f5" : "none",
-                  alignItems: "center", transition: "background 0.1s",
-                  background: b.status === "PENDING" ? "#FFFDF5" : "#fff",
+                  alignItems: "center", background: b.status === "PENDING" ? "#FFFDF5" : "#fff",
                 }}
                   onMouseEnter={e => e.currentTarget.style.background = "#fafcff"}
                   onMouseLeave={e => e.currentTarget.style.background = b.status === "PENDING" ? "#FFFDF5" : "#fff"}
@@ -328,6 +326,9 @@ export default function AdminBookingsPage() {
           </div>
         </div>
       )}
+      <footer className="app-footer">
+        © 2026 Smart Campus Operations Hub
+      </footer>
     </div>
   );
 }
