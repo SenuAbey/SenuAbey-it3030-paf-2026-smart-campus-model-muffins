@@ -4,7 +4,7 @@ import { getResources, deleteResource, updateResourceStatus, getResourceStats } 
 import useResourceStore from "../store/resourceStore";
 import toast, { Toaster } from "react-hot-toast";
 import { RoleContext } from "../App";
-import { useAuthStore } from '../store/authStore';
+import { useAuthStore } from "../store/authStore";
 
 const BASE = "http://localhost:8081/api/v1";
 
@@ -40,8 +40,8 @@ const statusColor = {
 export default function CataloguePage() {
   const navigate = useNavigate();
   const { role, setRole } = useContext(RoleContext);
+  const { user, logoutUser } = useAuthStore();
   const { filters, setFilters, resetFilters } = useResourceStore();
-  const { logoutUser, user } = useAuthStore();
   const [view, setView] = useState("categories");
   const [selectedType, setSelectedType] = useState(null);
   const [resources, setResources] = useState([]);
@@ -183,22 +183,11 @@ export default function CataloguePage() {
     <div style={{ minHeight: "100vh", background: "var(--bg)" }}>
       <Toaster position="top-right" />
 
-      {/* Header */}
       <header className="app-header">
         <div className="app-logo" onClick={() => { setView("categories"); setSelectedType(null); }}>
           UNI <span>Campus Hub</span>
         </div>
         <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-
-          {/* Role Toggle */}
-          <div className="role-toggle">
-            <button className={`role-btn ${role === "USER" ? "active" : ""}`} onClick={() => setRole("USER")}>
-              👤 User
-            </button>
-            <button className={`role-btn ${role === "ADMIN" ? "active" : ""}`} onClick={() => setRole("ADMIN")}>
-              ⚙️ Admin
-            </button>
-          </div>
 
           {/* Incident Tickets button */}
           <button
@@ -289,7 +278,6 @@ export default function CataloguePage() {
 
       <div style={{ maxWidth: "1400px", margin: "0 auto", padding: "30px 20px" }}>
 
-        {/* Stats - Admin only */}
         {view === "categories" && isAdmin && stats && (
           <div className="stats-grid">
             {[
@@ -306,7 +294,6 @@ export default function CataloguePage() {
           </div>
         )}
 
-        {/* Categories View */}
         {view === "categories" && (
           <div className="card-grid">
             {RESOURCE_TYPES.filter(t => categoryCounts[t] > 0).map(type => {
@@ -329,7 +316,6 @@ export default function CataloguePage() {
           </div>
         )}
 
-        {/* Resources View */}
         {view === "resources" && (
           <>
             <div className="filters-bar">

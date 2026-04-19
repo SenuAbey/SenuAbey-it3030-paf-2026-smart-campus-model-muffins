@@ -35,9 +35,8 @@ public class TicketService {
     @Autowired
     private TicketCommentRepository commentRepository;
 
-    // Optional: inject ResourceRepository if Module A is available
-    // @Autowired(required = false)
-    // private ResourceRepository resourceRepository;
+    @Autowired
+    private NotificationService notificationService;
 
     // ─── CREATE ──────────────────────────────────────────────────────────────────
 
@@ -57,10 +56,9 @@ public class TicketService {
 
         IncidentTicket saved = ticketRepository.save(ticket);
 
-        // Update resource status to UNDER_MAINTENANCE if resourceId is provided
-        // This uses a soft approach — the Resource entity update is done via a
-        // PATCH call to /api/v1/resources/{id}/status within this service.
-        // When OAuth is integrated, this will use the current user's token.
+        // Notify all admins about new ticket
+        notificationService.notifyAdminsNewTicket(dto.getReportedBy(), dto.getTitle());
+
         updateResourceStatusSafe(dto.getResourceId(), "UNDER_MAINTENANCE");
 
         return toResponseDTO(saved, false);
@@ -78,11 +76,8 @@ public class TicketService {
             String keyword,
             Pageable pageable) {
 
-        // Use unsorted pageable for native query — ORDER BY is not passed from Spring
-        // because native queries don't understand camelCase field names (createdAt vs created_at)
         Pageable unsorted = PageRequest.of(pageable.getPageNumber(), pageable.getPageSize());
 
-        // Convert enums to String for native SQL query (avoids PostgreSQL LOWER(bytea) error)
         return ticketRepository.findWithFilters(
                 status != null ? status.name() : null,
                 category != null ? category.name() : null,
@@ -94,7 +89,7 @@ public class TicketService {
     public TicketResponseDTO getTicketById(Long id) {
         IncidentTicket ticket = ticketRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Ticket not found with id: " + id));
-        return toResponseDTO(ticket, true); // include comments + attachments
+        return toResponseDTO(ticket, true);
     }
 
     public Page<TicketResponseDTO> getTicketsByResource(Long resourceId, Pageable pageable) {
@@ -136,7 +131,6 @@ public class TicketService {
             if (dto.getReason() != null && !dto.getReason().isBlank()) {
                 ticket.setResolutionNotes(dto.getReason());
             }
-            // Return resource to ACTIVE when ticket is resolved
             updateResourceStatusSafe(ticket.getResourceId(), "ACTIVE");
         }
         if (newStatus == TicketStatus.CLOSED) {
@@ -151,7 +145,16 @@ public class TicketService {
         }
 
         ticket.setStatus(newStatus);
-        return toResponseDTO(ticketRepository.save(ticket), false);
+        IncidentTicket updated = ticketRepository.save(ticket);
+
+        // Notify the user about ticket status change
+        notificationService.notifyUserTicketStatusChanged(
+                ticket.getReportedBy(),
+                ticket.getTitle(),
+                newStatus.name()
+        );
+
+        return toResponseDTO(updated, false);
     }
 
     @Autowired(required = false)
@@ -164,7 +167,6 @@ public class TicketService {
 
         String emailToAssign = dto.getAssignedTo();
 
-        // If technicianId provided, look up email and update workload counter
         if (dto.getTechnicianId() != null && technicianRepo != null) {
             smart_campus_api.entity.Technician tech = technicianRepo.findById(dto.getTechnicianId())
                     .orElse(null);
@@ -181,7 +183,6 @@ public class TicketService {
 
         ticket.setAssignedTo(emailToAssign);
 
-        // Auto-move to IN_PROGRESS when assigned, if still OPEN
         if (ticket.getStatus() == TicketStatus.OPEN) {
             ticket.setStatus(TicketStatus.IN_PROGRESS);
             if (ticket.getFirstResponseAt() == null) {
@@ -206,28 +207,24 @@ public class TicketService {
     public Map<String, Object> getTicketStats() {
         Map<String, Object> stats = new LinkedHashMap<>();
 
-        // Status breakdown
         Map<String, Long> byStatus = new LinkedHashMap<>();
         for (TicketStatus s : TicketStatus.values()) {
             byStatus.put(s.name(), ticketRepository.countByStatus(s));
         }
         stats.put("byStatus", byStatus);
 
-        // Priority breakdown
         Map<String, Long> byPriority = new LinkedHashMap<>();
         for (TicketPriority p : TicketPriority.values()) {
             byPriority.put(p.name(), ticketRepository.countByPriority(p));
         }
         stats.put("byPriority", byPriority);
 
-        // Category breakdown
         Map<String, Long> byCategory = new LinkedHashMap<>();
         for (TicketCategory c : TicketCategory.values()) {
             byCategory.put(c.name(), ticketRepository.countByCategory(c));
         }
         stats.put("byCategory", byCategory);
 
-        // Technician workload
         List<Object[]> workload = ticketRepository.getTechnicianWorkload();
         Map<String, Long> techWorkload = new LinkedHashMap<>();
         for (Object[] row : workload) {
@@ -235,7 +232,6 @@ public class TicketService {
         }
         stats.put("technicianWorkload", techWorkload);
 
-        // Totals
         stats.put("totalTickets", ticketRepository.count());
         stats.put("openTickets", ticketRepository.countByStatus(TicketStatus.OPEN));
         stats.put("inProgressTickets", ticketRepository.countByStatus(TicketStatus.IN_PROGRESS));
@@ -246,11 +242,7 @@ public class TicketService {
 
     // ─── SCHEDULED: AUTO-ESCALATION ──────────────────────────────────────────────
 
-    /**
-     * Runs every hour. Escalates OPEN tickets older than 48 hours to CRITICAL priority.
-     * This satisfies the "priority escalation" creativity requirement.
-     */
-    @Scheduled(fixedRate = 3600000) // every hour
+    @Scheduled(fixedRate = 3600000)
     @Transactional
     public void autoEscalateOldTickets() {
         LocalDateTime cutoff = LocalDateTime.now().minusHours(48);
@@ -270,14 +262,13 @@ public class TicketService {
     // ─── HELPERS ──────────────────────────────────────────────────────────────────
 
     private void validateStatusTransition(TicketStatus current, TicketStatus next) {
-        // Allowed transitions map
         Map<TicketStatus, Set<TicketStatus>> allowed = new HashMap<>();
         allowed.put(TicketStatus.OPEN, new HashSet<>(Arrays.asList(
                 TicketStatus.IN_PROGRESS, TicketStatus.REJECTED, TicketStatus.CLOSED)));
         allowed.put(TicketStatus.IN_PROGRESS, new HashSet<>(Arrays.asList(
                 TicketStatus.RESOLVED, TicketStatus.REJECTED)));
         allowed.put(TicketStatus.RESOLVED, new HashSet<>(Arrays.asList(
-                TicketStatus.CLOSED, TicketStatus.IN_PROGRESS))); // allow re-open
+                TicketStatus.CLOSED, TicketStatus.IN_PROGRESS)));
         allowed.put(TicketStatus.CLOSED, Collections.emptySet());
         allowed.put(TicketStatus.REJECTED, Collections.emptySet());
 
@@ -289,20 +280,8 @@ public class TicketService {
         }
     }
 
-    /**
-     * Attempts to update the linked resource's status.
-     * Uses a safe no-op if resourceId is null or if Module A's repository is unavailable.
-     * When full integration is done, inject ResourceRepository directly.
-     */
     private void updateResourceStatusSafe(Long resourceId, String newStatus) {
         if (resourceId == null) return;
-        // Integration point for Module A — ResourceRepository can be injected here.
-        // For now, this is a no-op placeholder.
-        // TODO: inject ResourceRepository and call:
-        // resourceRepository.findById(resourceId).ifPresent(r -> {
-        //     r.setStatus(ResourceStatus.valueOf(newStatus));
-        //     resourceRepository.save(r);
-        // });
         System.out.println("Resource #" + resourceId + " status update requested → " + newStatus);
     }
 
@@ -329,14 +308,12 @@ public class TicketService {
         dto.setCreatedAt(ticket.getCreatedAt());
         dto.setUpdatedAt(ticket.getUpdatedAt());
 
-        // Compute hours open for SLA display
         if (ticket.getCreatedAt() != null) {
             LocalDateTime end = ticket.getResolvedAt() != null ? ticket.getResolvedAt() : LocalDateTime.now();
             dto.setHoursOpen(ChronoUnit.HOURS.between(ticket.getCreatedAt(), end));
         }
 
         if (includeNested) {
-            // Comments
             List<CommentResponseDTO> comments = commentRepository
                     .findByTicketIdOrderByCreatedAtAsc(ticket.getId())
                     .stream().map(c -> {
@@ -353,7 +330,6 @@ public class TicketService {
             dto.setComments(comments);
             dto.setCommentCount(comments.size());
 
-            // Attachments
             List<AttachmentResponseDTO> attachments = attachmentRepository
                     .findByTicketId(ticket.getId())
                     .stream().map(a -> {
@@ -371,7 +347,6 @@ public class TicketService {
             dto.setAttachments(attachments);
             dto.setAttachmentCount(attachments.size());
         } else {
-            // Counts only for list view
             dto.setAttachmentCount((int) attachmentRepository.countByTicketId(ticket.getId()));
             dto.setCommentCount(commentRepository.findByTicketIdOrderByCreatedAtAsc(ticket.getId()).size());
         }

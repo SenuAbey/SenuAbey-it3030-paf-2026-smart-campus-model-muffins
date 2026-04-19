@@ -8,8 +8,8 @@ import smart_campus_api.entity.IncidentTicket;
 import smart_campus_api.entity.TicketAttachment;
 import smart_campus_api.repository.IncidentTicketRepository;
 import smart_campus_api.repository.TicketAttachmentRepository;
+import smart_campus_api.repository.UserRepository;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -29,6 +29,12 @@ public class TicketAttachmentService {
 
     @Autowired
     private IncidentTicketRepository ticketRepository;
+
+    @Autowired
+    private NotificationService notificationService;
+
+    @Autowired
+    private UserRepository userRepository;
 
     public AttachmentResponseDTO uploadAttachment(Long ticketId, MultipartFile file, String uploadedBy) {
         IncidentTicket ticket = ticketRepository.findById(ticketId)
@@ -79,6 +85,15 @@ public class TicketAttachmentService {
             attachment.setUploadedBy(uploadedBy);
 
             TicketAttachment saved = attachmentRepository.save(attachment);
+
+            // Only notify admins if the uploader is NOT an admin
+            boolean isAdmin = userRepository.findByEmail(uploadedBy)
+                    .map(u -> u.getRole().name().equals("ADMIN"))
+                    .orElse(false);
+            if (!isAdmin) {
+                notificationService.notifyAdminsNewAttachment(uploadedBy, ticket.getTitle(), ticketId);
+            }
+
             return toDTO(saved);
 
         } catch (IOException e) {
@@ -87,7 +102,6 @@ public class TicketAttachmentService {
     }
 
     public List<AttachmentResponseDTO> getAttachmentsByTicket(Long ticketId) {
-        // Verify ticket exists
         ticketRepository.findById(ticketId)
                 .orElseThrow(() -> new RuntimeException("Ticket not found with id: " + ticketId));
 
@@ -105,19 +119,16 @@ public class TicketAttachmentService {
             throw new RuntimeException("Attachment does not belong to ticket " + ticketId);
         }
 
-        // Only the uploader or admin can delete
         if (!attachment.getUploadedBy().equals(requestedBy) && !requestedBy.equals("admin")) {
             throw new RuntimeException("You do not have permission to delete this attachment.");
         }
 
-        // Delete file from disk
         try {
             String fileUrl = attachment.getFileUrl();
             String filename = fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
             Path filePath = Paths.get(UPLOAD_DIR, filename);
             Files.deleteIfExists(filePath);
         } catch (IOException e) {
-            // Log but don't fail — still remove the DB record
             System.err.println("Warning: could not delete attachment file from disk: " + e.getMessage());
         }
 

@@ -4,6 +4,7 @@ import axios from "axios";
 import toast, { Toaster } from "react-hot-toast";
 import { RoleContext } from "../../App";
 import { useAuthStore } from "../../store/authStore";
+import NotificationBell from '../../components/NotificationBell';
 
 const API = "http://localhost:8081/api/v1";
 
@@ -31,8 +32,9 @@ function StatusBadge({ status }) {
 
 export default function AdminBookingsPage() {
   const navigate = useNavigate();
-  // FIX: role values from JWT are 'USER' / 'ADMIN', not 'STUDENT' / 'ADMIN'
   const { role } = useContext(RoleContext);
+  const { user, logoutUser } = useAuthStore();
+  const isAdmin = role === "ADMIN";
 
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -95,17 +97,56 @@ export default function AdminBookingsPage() {
       <Toaster position="top-right" />
 
       <header className="app-header">
-        <div className="app-logo" onClick={() => navigate("/")}>UNI <span>Campus Hub</span></div>
+        <div className="app-logo" onClick={() => navigate("/")} style={{ flexShrink: 0 }}>
+          UNI <span>Campus Hub</span>
+        </div>
+
         <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
-          <button className="btn btn-secondary" onClick={() => navigate("/bookings")}>👤 User View</button>
-          <button className="btn btn-secondary" onClick={() => navigate("/")}>← Catalogue</button>
+
+          {/* User Info */}
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            {user?.profilePicture && (
+              <img src={user.profilePicture} alt="profile"
+                style={{ width: "32px", height: "32px", borderRadius: "50%", border: "2px solid #E87722" }} />
+            )}
+            <span style={{ fontSize: "13px", fontWeight: "600", color: "#333" }}>
+              {user?.name}
+            </span>
+            <span style={{
+              fontSize: "11px", padding: "2px 10px", borderRadius: "12px", fontWeight: "700",
+              background: isAdmin ? "#003366" : "#E87722", color: "#fff"
+            }}>
+              {role}
+            </span>
+            <NotificationBell />
+            <button className="btn btn-secondary" style={{ fontSize: "12px", padding: "6px 12px" }}
+              onClick={() => { logoutUser(); window.location.href = "/login"; }}>
+              Logout
+            </button>
+          </div>
+
+          <button className="btn btn-secondary" onClick={() => navigate("/tickets")}>
+            🔧 Incident Tickets
+          </button>
+          <button className="btn btn-secondary" onClick={() => navigate("/technicians")}>
+            👷 Manage Technicians
+          </button>
+          <button className="btn btn-secondary" onClick={() => navigate("/admin/bookings")}>
+            📋 Manage Bookings
+          </button>
+          <button className="btn btn-secondary" onClick={() => navigate("/resource-groups")}>
+            🗂️ Manage Groups
+          </button>
+          <button className="btn btn-secondary" onClick={() => navigate("/")}>
+            ← Catalogue
+          </button>
         </div>
       </header>
 
       <div className="app-banner" style={{
         backgroundImage: "linear-gradient(rgba(0,51,102,0.92), rgba(0,51,102,0.75)), url('https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=1200&q=80')"
       }}>
-        <div style={{ fontSize: "12px", opacity: 0.7, marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.1em" }}>Admin Panel — Module B</div>
+        <div style={{ fontSize: "12px", opacity: 0.7, marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.1em" }}>Admin Panel</div>
         <h1 style={{ fontSize: "36px", fontWeight: "300", margin: "0 0 8px", color: "#fff" }}>
           Booking <strong style={{ fontWeight: "800" }}>Administration</strong>
         </h1>
@@ -121,7 +162,6 @@ export default function AdminBookingsPage() {
 
       <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "30px 20px" }}>
 
-        {/* Stats */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "12px", marginBottom: "28px" }}>
           {Object.entries(STATUS_META).map(([status, meta]) => (
             <div key={status} style={{
@@ -140,7 +180,6 @@ export default function AdminBookingsPage() {
           ))}
         </div>
 
-        {/* Toolbar */}
         <div style={{ display: "flex", gap: "12px", marginBottom: "20px", flexWrap: "wrap", alignItems: "center" }}>
           <input
             placeholder="Search resource, user, purpose..."
@@ -172,7 +211,6 @@ export default function AdminBookingsPage() {
           }}>↻ Refresh</button>
         </div>
 
-        {/* Table */}
         {loading ? (
           <div style={{ textAlign: "center", padding: "60px", color: "#aaa" }}>Loading bookings...</div>
         ) : filtered.length === 0 ? (
@@ -231,23 +269,17 @@ export default function AdminBookingsPage() {
                   <div style={{ display: "flex", gap: "6px" }}>
                     {b.status === "PENDING" && (
                       <>
-                        <button
-                          onClick={() => approve(b.id)}
-                          disabled={isProcessing}
-                          style={{
-                            padding: "6px 12px", borderRadius: "7px", border: "none",
-                            background: "#1D9E75", color: "#fff", cursor: "pointer",
-                            fontSize: "12px", fontWeight: "600", opacity: isProcessing ? 0.5 : 1
-                          }}>✓ Approve</button>
-                        <button
-                          onClick={() => { setRejectModal(b.id); setRejectReason(""); }}
-                          disabled={isProcessing}
-                          style={{
-                            padding: "6px 12px", borderRadius: "7px",
-                            border: "1px solid #ffcdd2", background: "transparent",
-                            color: "#e53935", cursor: "pointer", fontSize: "12px", fontWeight: "600",
-                            opacity: isProcessing ? 0.5 : 1
-                          }}>✕ Reject</button>
+                        <button onClick={() => approve(b.id)} disabled={isProcessing} style={{
+                          padding: "6px 12px", borderRadius: "7px", border: "none",
+                          background: "#1D9E75", color: "#fff", cursor: "pointer",
+                          fontSize: "12px", fontWeight: "600", opacity: isProcessing ? 0.5 : 1
+                        }}>✓ Approve</button>
+                        <button onClick={() => { setRejectModal(b.id); setRejectReason(""); }} disabled={isProcessing} style={{
+                          padding: "6px 12px", borderRadius: "7px",
+                          border: "1px solid #ffcdd2", background: "transparent",
+                          color: "#e53935", cursor: "pointer", fontSize: "12px", fontWeight: "600",
+                          opacity: isProcessing ? 0.5 : 1
+                        }}>✕ Reject</button>
                       </>
                     )}
                     {b.status === "REJECTED" && b.rejectionReason && (
@@ -263,11 +295,10 @@ export default function AdminBookingsPage() {
         )}
       </div>
 
-      <footer style={{ background: "#fff", borderTop: "4px solid var(--sliit-orange)", padding: "20px", textAlign: "center", fontSize: "12px", color: "#aaa", marginTop: "40px" }}>
+      <footer className="app-footer">
         © 2026 Smart Campus Operations Hub — Admin Booking Management
       </footer>
 
-      {/* Reject Modal */}
       {rejectModal && (
         <div style={{
           position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)",
@@ -279,12 +310,9 @@ export default function AdminBookingsPage() {
             <label style={{ display: "block", fontSize: "12px", fontWeight: "600", color: "#555", marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
               Rejection Reason *
             </label>
-            <textarea
-              value={rejectReason}
-              onChange={e => setRejectReason(e.target.value)}
+            <textarea value={rejectReason} onChange={e => setRejectReason(e.target.value)}
               placeholder="e.g. Resource not available for this time slot..."
-              rows={3}
-              className="form-input"
+              rows={3} className="form-input"
               style={{ resize: "vertical", fontSize: "13px", padding: "10px 12px" }}
             />
             <div style={{ display: "flex", gap: "10px", marginTop: "20px", justifyContent: "flex-end" }}>

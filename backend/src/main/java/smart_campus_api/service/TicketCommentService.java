@@ -8,6 +8,7 @@ import smart_campus_api.entity.IncidentTicket;
 import smart_campus_api.entity.TicketComment;
 import smart_campus_api.repository.IncidentTicketRepository;
 import smart_campus_api.repository.TicketCommentRepository;
+import smart_campus_api.repository.UserRepository;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -21,6 +22,12 @@ public class TicketCommentService {
     @Autowired
     private IncidentTicketRepository ticketRepository;
 
+    @Autowired
+    private NotificationService notificationService;
+
+    @Autowired
+    private UserRepository userRepository;
+
     public CommentResponseDTO addComment(Long ticketId, CommentRequestDTO dto) {
         IncidentTicket ticket = ticketRepository.findById(ticketId)
                 .orElseThrow(() -> new RuntimeException("Ticket not found with id: " + ticketId));
@@ -31,6 +38,15 @@ public class TicketCommentService {
         comment.setCommentedBy(dto.getCommentedBy());
 
         TicketComment saved = commentRepository.save(comment);
+
+        // Only notify admins if the commenter is NOT an admin
+        boolean isAdmin = userRepository.findByEmail(dto.getCommentedBy())
+                .map(u -> u.getRole().name().equals("ADMIN"))
+                .orElse(false);
+        if (!isAdmin) {
+            notificationService.notifyAdminsNewComment(dto.getCommentedBy(), ticket.getTitle(), ticketId);
+        }
+
         return toDTO(saved);
     }
 
@@ -52,7 +68,6 @@ public class TicketCommentService {
             throw new RuntimeException("Comment does not belong to ticket " + ticketId);
         }
 
-        // Only the comment owner can edit
         if (!comment.getCommentedBy().equals(dto.getCommentedBy())) {
             throw new RuntimeException("You do not have permission to edit this comment. Only the original author can edit.");
         }
@@ -72,7 +87,6 @@ public class TicketCommentService {
             throw new RuntimeException("Comment does not belong to ticket " + ticketId);
         }
 
-        // Only the comment owner or admin can delete
         if (!comment.getCommentedBy().equals(requestedBy) && !requestedBy.equals("admin")) {
             throw new RuntimeException("You do not have permission to delete this comment.");
         }
