@@ -9,19 +9,12 @@ import LoginPage from './pages/LoginPage';
 import AuthCallback from './pages/AuthCallback';
 import { useAuthStore } from './store/authStore';
 import { getMe } from './api/authApi';
-import BookingsPage from './pages/bookings/BookingsPage';
-import AdminBookingsPage from './pages/bookings/AdminBookingsPage';
 import TicketsPage from './pages/TicketsPage';
 import TicketDetailPage from './pages/TicketDetailPage';
 import CreateTicketPage from './pages/CreateTicketPage';
 import TicketStatsPage from './pages/TicketStatsPage';
 import TechniciansPage from './pages/TechniciansPage';
 import './global.css';
-import TicketsPage from './pages/TicketsPage';
-import TicketDetailPage from './pages/TicketDetailPage';
-import CreateTicketPage from './pages/CreateTicketPage';
-import TicketStatsPage from './pages/TicketStatsPage';
-import TechniciansPage from './pages/TechniciansPage';
 
 export const RoleContext = React.createContext('USER');
 
@@ -35,7 +28,7 @@ function ProtectedRoute({ children, requiredRole }) {
 }
 
 function App() {
-  const { token, setUser, role, setRole } = useAuthStore(); // role persisted via store
+  const { token, setUser, role, setRole } = useAuthStore();
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

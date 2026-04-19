@@ -416,12 +416,9 @@ export default function TechniciansPage() {
           </div>
         )}
       </div>
-<<<<<<< HEAD
-=======
       <footer className="app-footer">
         © 2026 Smart Campus Operations Hub
       </footer>
->>>>>>> 60786c4bd4d542dc7667c70dea0e9201bb472e65
     </div>
   );
 }
