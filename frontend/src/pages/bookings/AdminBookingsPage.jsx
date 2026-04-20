@@ -5,6 +5,7 @@ import toast, { Toaster } from "react-hot-toast";
 import { RoleContext } from "../../App";
 import { useAuthStore } from "../../store/authStore";
 import AppHeader from '../../components/AppHeader';
+import QRCodeModal from '../../components/QRCodeModal';
 
 const API = "http://localhost:8081/api/v1";
 
@@ -43,6 +44,7 @@ export default function AdminBookingsPage() {
   const [rejectModal, setRejectModal] = useState(null);
   const [rejectReason, setRejectReason] = useState("");
   const [processingId, setProcessingId] = useState(null);
+  const [qrBooking, setQrBooking] = useState(null);
 
   useEffect(() => {
     // Redirect non-admins away
@@ -272,6 +274,23 @@ export default function AdminBookingsPage() {
                       🗑 Delete
                     </button>
 
+                    {/* QR Code Button - Show for approved bookings */}
+                    {b.status === "APPROVED" && (
+                      <button
+                        onClick={() => setQrBooking(b)}
+                        disabled={isProcessing}
+                        style={{
+                          padding: "6px 12px", borderRadius: "7px",
+                          border: "1px solid #667eea", background: "transparent",
+                          color: "#667eea", cursor: "pointer", fontSize: "12px", fontWeight: "600",
+                          opacity: isProcessing ? 0.5 : 1
+                        }}
+                        title="Generate QR Code for check-in"
+                      >
+                        📱 QR
+                      </button>
+                    )}
+
 
                     {b.status === "REJECTED" && b.rejectionReason && (
                       <span style={{ fontSize: "11px", color: "#e53935", fontStyle: "italic" }} title={b.rejectionReason}>
@@ -285,6 +304,8 @@ export default function AdminBookingsPage() {
           </div>
         )}
       </div>
+
+
 
       {rejectModal && (
         <div style={{
@@ -315,6 +336,14 @@ export default function AdminBookingsPage() {
           </div>
         </div>
       )}
+
+      {/* QR Code Modal */}
+    {qrBooking && (
+      <QRCodeModal 
+        booking={qrBooking} 
+        onClose={() => setQrBooking(null)} 
+      />
+    )}
       <footer className="app-footer">© 2026 Smart Campus Operations Hub</footer>
     </div>
   );
