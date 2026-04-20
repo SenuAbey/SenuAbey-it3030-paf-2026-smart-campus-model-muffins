@@ -48,6 +48,7 @@ export default function NotificationBell() {
     if (type === 'BOOKING_REQUEST') return '📋';
     if (type === 'BOOKING_APPROVED') return '✅';
     if (type === 'BOOKING_REJECTED') return '❌';
+    if (type === 'BOOKING_CANCELLED') return '🚫';
     if (type === 'TICKET_CREATED') return '🎫';
     if (type === 'TICKET_COMMENT') return '💬';
     if (type === 'TICKET_ATTACHMENT') return '📎';
@@ -59,6 +60,7 @@ export default function NotificationBell() {
     if (type === 'BOOKING_REQUEST') return '#BA7517';
     if (type === 'BOOKING_APPROVED') return '#1D9E75';
     if (type === 'BOOKING_REJECTED') return '#E24B4A';
+    if (type === 'BOOKING_CANCELLED') return '#888780';
     if (type === 'TICKET_CREATED') return '#003366';
     if (type === 'TICKET_COMMENT') return '#5C6BC0';
     if (type === 'TICKET_ATTACHMENT') return '#7B1FA2';
@@ -66,7 +68,6 @@ export default function NotificationBell() {
     return '#003366';
   };
 
-  // Navigate to relevant page based on notification type
   const handleNotificationClick = (notification) => {
     setOpen(false);
     const type = notification.type;
@@ -75,8 +76,9 @@ export default function NotificationBell() {
       navigate('/admin/bookings');
     } else if (type === 'BOOKING_APPROVED' || type === 'BOOKING_REJECTED') {
       navigate('/bookings');
+    } else if (type === 'BOOKING_CANCELLED') {
+      navigate('/admin/bookings');
     } else if (type === 'TICKET_CREATED' || type === 'TICKET_COMMENT' || type === 'TICKET_ATTACHMENT') {
-      // Extract ticket ID from message if available
       const match = notification.message.match(/Ticket #(\d+)/);
       if (match) {
         navigate(`/tickets/${match[1]}`);

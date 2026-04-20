@@ -100,11 +100,13 @@ public class BookingService {
     }
 
     public BookingResponseDTO cancelBooking(Long id) {
-        Booking booking = bookingRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Booking not found"));
-        booking.setStatus(BookingStatus.CANCELLED);
-        return toDTO(bookingRepository.save(booking));
-    }
+    Booking booking = bookingRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Booking not found"));
+    booking.setStatus(BookingStatus.CANCELLED);
+    BookingResponseDTO result = toDTO(bookingRepository.save(booking));
+    notificationService.notifyAdminsBookingCancelled(booking.getBookedBy(), booking.getResource().getName());
+    return result;
+}
 
     public void deleteBooking(Long id) {
         bookingRepository.deleteById(id);
