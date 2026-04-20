@@ -86,12 +86,18 @@ public class TicketAttachmentService {
 
             TicketAttachment saved = attachmentRepository.save(attachment);
 
-            // Only notify admins if the uploader is NOT an admin
             boolean isAdmin = userRepository.findByEmail(uploadedBy)
                     .map(u -> u.getRole().name().equals("ADMIN"))
                     .orElse(false);
+
             if (!isAdmin) {
+                // User uploaded — notify all admins
                 notificationService.notifyAdminsNewAttachment(uploadedBy, ticket.getTitle(), ticketId);
+            } else {
+                // Admin uploaded — notify the ticket reporter
+                if (!ticket.getReportedBy().equals(uploadedBy)) {
+                    notificationService.notifyUserAdminAttached(ticket.getReportedBy(), ticket.getTitle(), ticketId);
+                }
             }
 
             return toDTO(saved);

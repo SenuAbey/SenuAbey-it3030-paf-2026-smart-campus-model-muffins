@@ -146,4 +146,47 @@ public void notifyAdminsNewAttachment(String uploadedBy, String ticketTitle, Lon
         notificationRepository.save(notification);
     }
 }
+
+// Called when user cancels a booking — notify all ADMINs
+public void notifyAdminsBookingCancelled(String bookedBy, String resourceName) {
+    List<User> admins = userRepository.findAll()
+            .stream()
+            .filter(u -> u.getRole() == Role.ADMIN)
+            .toList();
+
+    for (User admin : admins) {
+        Notification notification = Notification.builder()
+                .recipientEmail(admin.getEmail())
+                .title("Booking Cancelled 🚫")
+                .message(bookedBy + " cancelled their booking for " + resourceName)
+                .type("BOOKING_CANCELLED")
+                .read(false)
+                .build();
+        notificationRepository.save(notification);
+    }
+}
+
+// Called when admin comments on a ticket — notify the ticket reporter
+public void notifyUserAdminCommented(String userEmail, String ticketTitle, Long ticketId) {
+    Notification notification = Notification.builder()
+            .recipientEmail(userEmail)
+            .title("Admin commented on your ticket 💬")
+            .message("An admin commented on your ticket \"" + ticketTitle + "\" (Ticket #" + ticketId + ")")
+            .type("TICKET_COMMENT")
+            .read(false)
+            .build();
+    notificationRepository.save(notification);
+}
+
+// Called when admin uploads attachment on a ticket — notify the ticket reporter
+public void notifyUserAdminAttached(String userEmail, String ticketTitle, Long ticketId) {
+    Notification notification = Notification.builder()
+            .recipientEmail(userEmail)
+            .title("Admin added evidence to your ticket 📎")
+            .message("An admin uploaded an attachment on your ticket \"" + ticketTitle + "\" (Ticket #" + ticketId + ")")
+            .type("TICKET_ATTACHMENT")
+            .read(false)
+            .build();
+    notificationRepository.save(notification);
+}
 }
