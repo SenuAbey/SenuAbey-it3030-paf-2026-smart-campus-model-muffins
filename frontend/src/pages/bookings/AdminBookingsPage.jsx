@@ -85,6 +85,23 @@ export default function AdminBookingsPage() {
     } finally { setProcessingId(null); }
   };
 
+  // delete function
+ const deleteBooking = async (id) => {
+  setProcessingId(id);
+  try {
+    await axios.delete(`${API}/bookings/${id}`, authConfig());  // Added authConfig here
+    toast.success("Booking deleted successfully!");
+    fetchAll(); // Refresh the list
+  } catch (err) {
+    console.error('Delete error:', err);
+    toast.error(err.response?.data?.message || "Failed to delete booking");
+  } finally {
+    setProcessingId(null);
+  }
+};
+
+
+
   const counts = Object.fromEntries(Object.keys(STATUS_META).map(s => [s, bookings.filter(b => b.status === s).length]));
 
   const filtered = bookings.filter(b => {
@@ -181,7 +198,7 @@ export default function AdminBookingsPage() {
           <div style={{ background: "#fff", borderRadius: "12px", border: "1px solid #eee", overflow: "hidden", boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
             <div style={{
               display: "grid",
-              gridTemplateColumns: "2fr 1.5fr 1.8fr 1.8fr 80px 80px 160px",
+              gridTemplateColumns: "1.5fr 1.2fr 1.5fr 1.5fr 60px 80px 180px",
               padding: "12px 20px", background: "#f7f9fb",
               borderBottom: "1px solid #eee", fontSize: "11px", fontWeight: "700",
               color: "#aaa", textTransform: "uppercase", letterSpacing: "0.05em"
@@ -197,7 +214,7 @@ export default function AdminBookingsPage() {
               return (
                 <div key={b.id} style={{
                   display: "grid",
-                  gridTemplateColumns: "2fr 1.5fr 1.8fr 1.8fr 80px 80px 160px",
+                  gridTemplateColumns: "1.5fr 1.2fr 1.5fr 1.5fr 60px 80px 180px",
                   padding: "14px 20px", borderBottom: i < filtered.length - 1 ? "1px solid #f5f5f5" : "none",
                   alignItems: "center", background: b.status === "PENDING" ? "#FFFDF5" : "#fff",
                 }}
@@ -235,6 +252,27 @@ export default function AdminBookingsPage() {
                         }}>✕ Reject</button>
                       </>
                     )}
+                       
+                    {/* Delete Button - Always visible for admin */}
+                    <button
+                      onClick={() => {
+                        if (window.confirm(`Delete booking for "${b.resourceName}"? This action cannot be undone.`)) {
+                          deleteBooking(b.id);
+                        }
+                      }}
+                      disabled={isProcessing}
+                      style={{
+                        padding: "6px 12px", borderRadius: "7px",
+                        border: "1px solid #ffcdd2", background: "transparent",
+                        color: "#dc2626", cursor: "pointer", fontSize: "12px", fontWeight: "600",
+                        opacity: isProcessing ? 0.5 : 1
+                      }}
+                      title="Delete booking permanently"
+                    >
+                      🗑 Delete
+                    </button>
+
+
                     {b.status === "REJECTED" && b.rejectionReason && (
                       <span style={{ fontSize: "11px", color: "#e53935", fontStyle: "italic" }} title={b.rejectionReason}>
                         {b.rejectionReason.length > 20 ? b.rejectionReason.slice(0, 20) + "…" : b.rejectionReason}
