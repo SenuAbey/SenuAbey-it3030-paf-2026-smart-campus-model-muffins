@@ -41,7 +41,7 @@ public class Booking {
     private LocalDateTime updatedAt;
 
     @Column(name = "checked_in")
-    private boolean checkedIn = false;
+    private Boolean checkedIn = false;  // ✅ changed from boolean to Boolean
 
     @Column(name = "checked_in_at")
     private LocalDateTime checkedInAt;
@@ -56,7 +56,6 @@ public class Booking {
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
-
 
     // Getters and Setters
     public Long getId() { return id; }
@@ -79,8 +78,8 @@ public class Booking {
     public void setRejectionReason(String rejectionReason) { this.rejectionReason = rejectionReason; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
-    public boolean isCheckedIn() { return checkedIn; }
-    public void setCheckedIn(boolean checkedIn) { this.checkedIn = checkedIn; }
+    public Boolean isCheckedIn() { return checkedIn; }                          // ✅ changed from boolean to Boolean
+    public void setCheckedIn(Boolean checkedIn) { this.checkedIn = checkedIn; } // ✅ changed from boolean to Boolean
     public LocalDateTime getCheckedInAt() { return checkedInAt; }
     public void setCheckedInAt(LocalDateTime checkedInAt) { this.checkedInAt = checkedInAt; }
 }

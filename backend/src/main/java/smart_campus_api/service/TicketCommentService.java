@@ -39,12 +39,25 @@ public class TicketCommentService {
 
         TicketComment saved = commentRepository.save(comment);
 
-        // Only notify admins if the commenter is NOT an admin
+        // Check if commenter is admin
         boolean isAdmin = userRepository.findByEmail(dto.getCommentedBy())
                 .map(u -> u.getRole().name().equals("ADMIN"))
                 .orElse(false);
-        if (!isAdmin) {
-            notificationService.notifyAdminsNewComment(dto.getCommentedBy(), ticket.getTitle(), ticketId);
+
+        if (isAdmin) {
+            // ✅ Admin commented — notify the ticket reporter
+            notificationService.notifyUserAdminCommented(
+                ticket.getReportedBy(),
+                ticket.getTitle(),
+                ticketId
+            );
+        } else {
+            // ✅ User commented — notify all admins
+            notificationService.notifyAdminsNewComment(
+                dto.getCommentedBy(),
+                ticket.getTitle(),
+                ticketId
+            );
         }
 
         return toDTO(saved);
