@@ -3,7 +3,8 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuthStore } from '../store/authStore';
 
-const API = "http://localhost:8081/api/v1";
+//const API = "http://localhost:8081/api/v1";
+const API = "http://192.168.1.245:8081/api/v1";
 
 export default function CheckInPage() {
   const [searchParams] = useSearchParams();

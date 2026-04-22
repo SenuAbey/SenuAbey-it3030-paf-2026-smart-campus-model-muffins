@@ -5,6 +5,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import smart_campus_api.dto.BookingRequestDTO;
+import smart_campus_api.enums.BookingStatus;
 import smart_campus_api.dto.BookingResponseDTO;
 import smart_campus_api.service.BookingService;
 import org.springframework.http.MediaType;
@@ -122,7 +123,7 @@ public class BookingController {
         BookingResponseDTO booking = bookingService.getBookingById(id);
 
         // Check if booking is approved and not already checked in
-        if (!"APPROVED".equals(booking.getStatus())) {
+        if (booking.getStatus() != BookingStatus.APPROVED) {
             return ResponseEntity.badRequest().body(Map.of("error", "Only approved bookings can be checked in"));
         }
 

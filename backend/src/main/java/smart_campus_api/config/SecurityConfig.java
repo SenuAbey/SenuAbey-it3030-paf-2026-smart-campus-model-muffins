@@ -69,7 +69,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/resource-groups/**").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/v1/bookings/*/checkin").permitAll()
                         .requestMatchers(HttpMethod.GET,  "/api/v1/bookings/*/checkin-status").permitAll()
-
+                        .requestMatchers(HttpMethod.GET,  "/api/v1/bookings/*").permitAll()
                         // Bookings — GET /my requires auth; all mutations require auth
                         // GET /api/v1/bookings (admin list) also requires auth
                         .requestMatchers(HttpMethod.GET, "/api/v1/bookings/**").authenticated()
