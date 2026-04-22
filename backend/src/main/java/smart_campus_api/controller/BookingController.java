@@ -91,10 +91,10 @@ public class BookingController {
             System.out.println("Booking found: " + (booking != null));
             System.out.println("Booking Status: " + booking.getStatus());
 
-            //if (!"APPROVED".equals(booking.getStatus())) {
-                //System.out.println("ERROR: Booking not approved");
-                //return ResponseEntity.badRequest().body("Booking not approved");
-            //}
+            if (!"APPROVED".equals(booking.getStatus().name())) {
+                System.out.println("ERROR: Booking not approved");
+                return ResponseEntity.badRequest().body("Booking not approved");
+            }
 
             String checkInUrl = frontendUrl + "/checkin?bookingId=" + id;
             System.out.println("Check-in URL: " + checkInUrl);

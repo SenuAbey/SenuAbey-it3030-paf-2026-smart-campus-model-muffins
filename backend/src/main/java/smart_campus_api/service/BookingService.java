@@ -124,6 +124,8 @@ public class BookingService {
         dto.setStatus(b.getStatus());
         dto.setRejectionReason(b.getRejectionReason());
         dto.setCreatedAt(b.getCreatedAt());
+        dto.setCheckedIn(b.isCheckedIn());
+        dto.setCheckedInAt(b.getCheckedInAt());
         return dto;
     }
 

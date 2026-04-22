@@ -200,13 +200,13 @@ export default function AdminBookingsPage() {
           <div style={{ background: "#fff", borderRadius: "12px", border: "1px solid #eee", overflow: "hidden", boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
             <div style={{
               display: "grid",
-              gridTemplateColumns: "1.5fr 1.2fr 1.5fr 1.5fr 60px 80px 180px",
+              gridTemplateColumns: "1.5fr 1.2fr 1.5fr 1.5fr 60px 80px 100px 180px",
               padding: "12px 20px", background: "#f7f9fb",
               borderBottom: "1px solid #eee", fontSize: "11px", fontWeight: "700",
               color: "#aaa", textTransform: "uppercase", letterSpacing: "0.05em"
             }}>
               <span>Resource</span><span>Booked By</span><span>Start Time</span>
-              <span>End Time</span><span>Pax</span><span>Status</span><span>Actions</span>
+              <span>End Time</span><span>Pax</span><span>Status</span><span>Check-In</span><span>Actions</span>
             </div>
 
             {filtered.map((b, i) => {
@@ -216,7 +216,7 @@ export default function AdminBookingsPage() {
               return (
                 <div key={b.id} style={{
                   display: "grid",
-                  gridTemplateColumns: "1.5fr 1.2fr 1.5fr 1.5fr 60px 80px 180px",
+                  gridTemplateColumns: "1.5fr 1.2fr 1.5fr 1.5fr 60px 80px 100px 180px",
                   padding: "14px 20px", borderBottom: i < filtered.length - 1 ? "1px solid #f5f5f5" : "none",
                   alignItems: "center", background: b.status === "PENDING" ? "#FFFDF5" : "#fff",
                 }}
@@ -238,6 +238,13 @@ export default function AdminBookingsPage() {
                   </div>
                   <div style={{ fontSize: "13px", color: "#555" }}>{b.attendees || "—"}</div>
                   <div><StatusBadge status={b.status} /></div>
+                  <div style={{ fontSize: "12px" }}>
+                    {b.checkedIn ? (
+                      <span style={{ color: "#1D9E75", fontWeight: "600" }}>✅ Yes</span>
+                    ) : (
+                      <span style={{ color: "#aaa" }}>No</span>
+                    )}
+                  </div>
                   <div style={{ display: "flex", gap: "6px" }}>
                     {b.status === "PENDING" && (
                       <>

@@ -5,6 +5,7 @@ import toast, { Toaster } from "react-hot-toast";
 import { RoleContext } from "../../App";
 import { useAuthStore } from "../../store/authStore";
 import AppHeader from '../../components/AppHeader';
+import QRCodeModal from '../../components/QRCodeModal';
 
 const API = "http://localhost:8081/api/v1";
 
@@ -30,7 +31,7 @@ function StatusBadge({ status }) {
   );
 }
 
-function BookingCard({ booking, onCancel }) {
+function BookingCard({ booking, onCancel, onShowQR }) {
   const start = new Date(booking.startTime);
   const end = new Date(booking.endTime);
   const durMs = end - start;
@@ -52,6 +53,12 @@ function BookingCard({ booking, onCancel }) {
           <div style={{ fontSize: "12px", color: "#888" }}>{booking.bookedBy}</div>
         </div>
         <StatusBadge status={booking.status} />
+        {booking.checkedIn && (
+          <span style={{
+            fontSize: "11px", fontWeight: "700", padding: "3px 10px", borderRadius: "20px",
+            background: "#E8F8F3", color: "#1D9E75", display: "inline-flex", alignItems: "center", gap: "4px"
+          }}>📍 Checked In</span>
+        )}
       </div>
 
       <div style={{
@@ -90,10 +97,17 @@ function BookingCard({ booking, onCancel }) {
       )}
 
       {booking.status === "APPROVED" && (
-        <button onClick={() => onCancel(booking.id)} style={{
-          padding: "8px", borderRadius: "8px", border: "1px solid #ffcdd2",
-          background: "transparent", color: "#e53935", cursor: "pointer", fontSize: "13px", fontWeight: "600", width: "100%"
-        }}>Cancel Booking</button>
+        <div style={{ display: "flex", gap: "8px" }}>
+          <button onClick={() => onShowQR(booking)} style={{
+            flex: 1, padding: "8px", borderRadius: "8px", border: "1px solid #667eea",
+            background: "transparent", color: "#667eea", cursor: "pointer", fontSize: "13px", fontWeight: "600"
+          }}>📱 View QR</button>
+          
+          <button onClick={() => onCancel(booking.id)} style={{
+            flex: 1, padding: "8px", borderRadius: "8px", border: "1px solid #ffcdd2",
+            background: "transparent", color: "#e53935", cursor: "pointer", fontSize: "13px", fontWeight: "600"
+          }}>Cancel Booking</button>
+        </div>
       )}
     </div>
   );
@@ -115,6 +129,7 @@ export default function BookingsPage() {
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState("new");
+  const [qrBooking, setQrBooking] = useState(null);
 
   const [form, setForm] = useState({
     resourceId: preselectedId,
@@ -424,12 +439,27 @@ export default function BookingsPage() {
               </div>
             ) : (
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: "16px" }}>
-                {filtered.map(b => <BookingCard key={b.id} booking={b} onCancel={handleCancel} />)}
+                {filtered.map(b => (
+                  <BookingCard 
+                    key={b.id} 
+                    booking={b} 
+                    onCancel={handleCancel} 
+                    onShowQR={(b) => setQrBooking(b)} 
+                  />
+                ))}
               </div>
             )}
           </div>
         )}
       </div>
+      {/* QR Code Modal */}
+      {qrBooking && (
+        <QRCodeModal
+          booking={qrBooking}
+          onClose={() => setQrBooking(null)}
+        />
+      )}
+
       <footer className="app-footer">© 2026 Smart Campus Operations Hub</footer>
     </div>
   );
