@@ -12,6 +12,7 @@ import smart_campus_api.repository.BookingRepository;
 import smart_campus_api.repository.ResourceRepository;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.time.LocalDateTime;
 
 @Service
 public class BookingService {
@@ -125,6 +126,23 @@ public class BookingService {
         dto.setStatus(b.getStatus());
         dto.setRejectionReason(b.getRejectionReason());
         dto.setCreatedAt(b.getCreatedAt());
+        dto.setCheckedIn(b.isCheckedIn());
+        dto.setCheckedInAt(b.getCheckedInAt());
         return dto;
     }
+
+    public void checkIn(Long id) {
+        Booking booking = bookingRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Booking not found"));
+        booking.setCheckedIn(true);
+        booking.setCheckedInAt(LocalDateTime.now());
+        bookingRepository.save(booking);
+    }
+
+    public boolean isCheckedIn(Long id) {
+        Booking booking = bookingRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Booking not found"));
+        return booking.isCheckedIn();
+    }
+
 }

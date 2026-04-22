@@ -14,7 +14,9 @@ import TicketDetailPage from './pages/TicketDetailPage';
 import CreateTicketPage from './pages/CreateTicketPage';
 import TicketStatsPage from './pages/TicketStatsPage';
 import TechniciansPage from './pages/TechniciansPage';
+import CheckInPage from './pages/CheckInPage';
 import './global.css';
+
 
 export const RoleContext = React.createContext('USER');
 
@@ -68,6 +70,7 @@ function App() {
           {/* ── Public routes ───────────────────────────────────────── */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/auth/callback" element={<AuthCallback />} />
+          <Route path="/checkin" element={<CheckInPage />} />
 
           {/* ── Shared protected routes (any logged-in user) ─────────── */}
           <Route path="/" element={

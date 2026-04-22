@@ -35,13 +35,15 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of(
-                "http://localhost:5173",
-                "http://localhost:5174"
-        ));
+        config.setAllowedOriginPatterns(List.of("*"));
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
+        config.setAllowedOrigins(List.of(
+                "http://localhost:5173",
+                "http://localhost:5174",
+                "http://192.168.1.5:5173"    // ← add this
+        ));
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
@@ -65,7 +67,9 @@ public class SecurityConfig {
                         // Resource catalogue — public reads
                         .requestMatchers(HttpMethod.GET, "/api/v1/resources/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/resource-groups/**").permitAll()
-
+                        .requestMatchers(HttpMethod.POST, "/api/v1/bookings/*/checkin").permitAll()
+                        .requestMatchers(HttpMethod.GET,  "/api/v1/bookings/*/checkin-status").permitAll()
+                        .requestMatchers(HttpMethod.GET,  "/api/v1/bookings/*").permitAll()
                         // Bookings — GET /my requires auth; all mutations require auth
                         // GET /api/v1/bookings (admin list) also requires auth
                         .requestMatchers(HttpMethod.GET, "/api/v1/bookings/**").authenticated()

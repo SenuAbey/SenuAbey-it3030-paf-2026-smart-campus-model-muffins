@@ -5,6 +5,7 @@ import toast, { Toaster } from "react-hot-toast";
 import { RoleContext } from "../../App";
 import { useAuthStore } from "../../store/authStore";
 import AppHeader from '../../components/AppHeader';
+import QRCodeModal from '../../components/QRCodeModal';
 
 const API = "http://localhost:8081/api/v1";
 
@@ -43,6 +44,7 @@ export default function AdminBookingsPage() {
   const [rejectModal, setRejectModal] = useState(null);
   const [rejectReason, setRejectReason] = useState("");
   const [processingId, setProcessingId] = useState(null);
+  const [qrBooking, setQrBooking] = useState(null);
 
   useEffect(() => {
     // Redirect non-admins away
@@ -84,6 +86,23 @@ export default function AdminBookingsPage() {
       toast.error(err.response?.data?.message || "Failed to reject");
     } finally { setProcessingId(null); }
   };
+
+  // delete function
+ const deleteBooking = async (id) => {
+  setProcessingId(id);
+  try {
+    await axios.delete(`${API}/bookings/${id}`, authConfig());  // Added authConfig here
+    toast.success("Booking deleted successfully!");
+    fetchAll(); // Refresh the list
+  } catch (err) {
+    console.error('Delete error:', err);
+    toast.error(err.response?.data?.message || "Failed to delete booking");
+  } finally {
+    setProcessingId(null);
+  }
+};
+
+
 
   const counts = Object.fromEntries(Object.keys(STATUS_META).map(s => [s, bookings.filter(b => b.status === s).length]));
 
@@ -181,13 +200,13 @@ export default function AdminBookingsPage() {
           <div style={{ background: "#fff", borderRadius: "12px", border: "1px solid #eee", overflow: "hidden", boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
             <div style={{
               display: "grid",
-              gridTemplateColumns: "2fr 1.5fr 1.8fr 1.8fr 80px 80px 160px",
+              gridTemplateColumns: "1.5fr 1.2fr 1.5fr 1.5fr 60px 80px 100px 180px",
               padding: "12px 20px", background: "#f7f9fb",
               borderBottom: "1px solid #eee", fontSize: "11px", fontWeight: "700",
               color: "#aaa", textTransform: "uppercase", letterSpacing: "0.05em"
             }}>
               <span>Resource</span><span>Booked By</span><span>Start Time</span>
-              <span>End Time</span><span>Pax</span><span>Status</span><span>Actions</span>
+              <span>End Time</span><span>Pax</span><span>Status</span><span>Check-In</span><span>Actions</span>
             </div>
 
             {filtered.map((b, i) => {
@@ -197,7 +216,7 @@ export default function AdminBookingsPage() {
               return (
                 <div key={b.id} style={{
                   display: "grid",
-                  gridTemplateColumns: "2fr 1.5fr 1.8fr 1.8fr 80px 80px 160px",
+                  gridTemplateColumns: "1.5fr 1.2fr 1.5fr 1.5fr 60px 80px 100px 180px",
                   padding: "14px 20px", borderBottom: i < filtered.length - 1 ? "1px solid #f5f5f5" : "none",
                   alignItems: "center", background: b.status === "PENDING" ? "#FFFDF5" : "#fff",
                 }}
@@ -219,6 +238,13 @@ export default function AdminBookingsPage() {
                   </div>
                   <div style={{ fontSize: "13px", color: "#555" }}>{b.attendees || "—"}</div>
                   <div><StatusBadge status={b.status} /></div>
+                  <div style={{ fontSize: "12px" }}>
+                    {b.checkedIn ? (
+                      <span style={{ color: "#1D9E75", fontWeight: "600" }}>✅ Yes</span>
+                    ) : (
+                      <span style={{ color: "#aaa" }}>No</span>
+                    )}
+                  </div>
                   <div style={{ display: "flex", gap: "6px" }}>
                     {b.status === "PENDING" && (
                       <>
@@ -235,6 +261,44 @@ export default function AdminBookingsPage() {
                         }}>✕ Reject</button>
                       </>
                     )}
+                       
+                    {/* Delete Button - Always visible for admin */}
+                    <button
+                      onClick={() => {
+                        if (window.confirm(`Delete booking for "${b.resourceName}"? This action cannot be undone.`)) {
+                          deleteBooking(b.id);
+                        }
+                      }}
+                      disabled={isProcessing}
+                      style={{
+                        padding: "6px 12px", borderRadius: "7px",
+                        border: "1px solid #ffcdd2", background: "transparent",
+                        color: "#dc2626", cursor: "pointer", fontSize: "12px", fontWeight: "600",
+                        opacity: isProcessing ? 0.5 : 1
+                      }}
+                      title="Delete booking permanently"
+                    >
+                      🗑 Delete
+                    </button>
+
+                    {/* QR Code Button - Show for approved bookings */}
+                    {b.status === "APPROVED" && (
+                      <button
+                        onClick={() => setQrBooking(b)}
+                        disabled={isProcessing}
+                        style={{
+                          padding: "6px 12px", borderRadius: "7px",
+                          border: "1px solid #667eea", background: "transparent",
+                          color: "#667eea", cursor: "pointer", fontSize: "12px", fontWeight: "600",
+                          opacity: isProcessing ? 0.5 : 1
+                        }}
+                        title="Generate QR Code for check-in"
+                      >
+                        📱 QR
+                      </button>
+                    )}
+
+
                     {b.status === "REJECTED" && b.rejectionReason && (
                       <span style={{ fontSize: "11px", color: "#e53935", fontStyle: "italic" }} title={b.rejectionReason}>
                         {b.rejectionReason.length > 20 ? b.rejectionReason.slice(0, 20) + "…" : b.rejectionReason}
@@ -247,6 +311,8 @@ export default function AdminBookingsPage() {
           </div>
         )}
       </div>
+
+
 
       {rejectModal && (
         <div style={{
@@ -277,6 +343,14 @@ export default function AdminBookingsPage() {
           </div>
         </div>
       )}
+
+      {/* QR Code Modal */}
+    {qrBooking && (
+      <QRCodeModal 
+        booking={qrBooking} 
+        onClose={() => setQrBooking(null)} 
+      />
+    )}
       <footer className="app-footer">© 2026 Smart Campus Operations Hub</footer>
     </div>
   );
