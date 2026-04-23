@@ -270,11 +270,48 @@ export default function CataloguePage() {
 
         {view === "resources" && (
           <>
+            {/* Status summary bar */}
+            <div style={{
+              display: "flex", gap: "8px", marginBottom: "12px", flexWrap: "wrap"
+            }}>
+              {["ACTIVE", "UNDER_MAINTENANCE", "OUT_OF_SERVICE", "DECOMMISSIONED"].map(s => {
+                const count = resources.filter(r => r.status === s).length;
+                if (count === 0) return null;
+                return (
+                  <div key={s} onClick={() => setFilters({ status: filters.status === s ? "" : s })}
+                    style={{
+                      display: "flex", alignItems: "center", gap: "6px",
+                      padding: "5px 12px", borderRadius: "20px", cursor: "pointer",
+                      background: filters.status === s ? statusColor[s] : "#fff",
+                      border: `1px solid ${statusColor[s]}`,
+                      color: filters.status === s ? "#fff" : statusColor[s],
+                      fontSize: "12px", fontWeight: "600", transition: "all 0.2s"
+                    }}>
+                    <span style={{
+                      width: "8px", height: "8px", borderRadius: "50%",
+                      background: filters.status === s ? "#fff" : statusColor[s],
+                      display: "inline-block"
+                    }} />
+                    {s.replace(/_/g, " ")} ({count})
+                  </div>
+                );
+              })}
+              {filters.status && (
+                <div onClick={() => setFilters({ status: "" })} style={{
+                  padding: "5px 12px", borderRadius: "20px", cursor: "pointer",
+                  background: "transparent", border: "1px solid #ddd",
+                  color: "#888", fontSize: "12px"
+                }}>Clear filter ✕</div>
+              )}
+            </div>
+
+            {/* Filters bar */}
             <div className="filters-bar">
               <input placeholder="Search by name..." value={filters.search}
                 onChange={(e) => setFilters({ search: e.target.value })}
                 className="form-input" style={{ flex: 1, minWidth: "160px" }} />
-              <select value={filters.status} onChange={(e) => setFilters({ status: e.target.value })} className="form-input" style={{ width: "auto" }}>
+              <select value={filters.status} onChange={(e) => setFilters({ status: e.target.value })}
+                className="form-input" style={{ width: "auto" }}>
                 <option value="">All statuses</option>
                 {STATUSES.map(s => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
               </select>
