@@ -10,16 +10,13 @@ import org.springframework.stereotype.Service;
 import smart_campus_api.dto.ResourceRequestDTO;
 import smart_campus_api.dto.ResourceResponseDTO;
 import smart_campus_api.entity.Resource;
-import smart_campus_api.entity.ResourceImage;
 import smart_campus_api.enums.ResourceStatus;
 import smart_campus_api.enums.ResourceType;
-import smart_campus_api.repository.ResourceImageRepository;
 import smart_campus_api.repository.ResourceRepository;
 import smart_campus_api.service.ImageStorageService;
 
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -30,7 +27,6 @@ public class ResourceService {
 
     private final ResourceRepository resourceRepository;
     private final ImageStorageService imageStorageService;
-    private final ResourceImageRepository resourceImageRepository;
 
     public ResourceResponseDTO createResource(ResourceRequestDTO dto, String createdBy) {
         Resource resource = mapToEntity(dto);
@@ -69,9 +65,6 @@ public class ResourceService {
         existing.setBufferMinutes(dto.getBufferMinutes());
         existing.setMaxBookingHours(dto.getMaxBookingHours());
         existing.setMaxAdvanceDays(dto.getMaxAdvanceDays());
-        if (dto.getAvailabilityWindows() != null) {
-            existing.setAvailabilityWindows(dto.getAvailabilityWindows());
-        }
         return mapToDTO(resourceRepository.save(existing));
     }
 
@@ -117,7 +110,6 @@ public class ResourceService {
                 .bufferMinutes(dto.getBufferMinutes())
                 .maxBookingHours(dto.getMaxBookingHours())
                 .maxAdvanceDays(dto.getMaxAdvanceDays())
-                .availabilityWindows(dto.getAvailabilityWindows() != null ? dto.getAvailabilityWindows() : new java.util.ArrayList<>())
                 .build();
     }
 
@@ -140,7 +132,6 @@ public class ResourceService {
                 .createdBy(resource.getCreatedBy())
                 .createdAt(resource.getCreatedAt())
                 .updatedAt(resource.getUpdatedAt())
-                .availabilityWindows(resource.getAvailabilityWindows())
                 .build();
     }
 
@@ -157,41 +148,5 @@ public class ResourceService {
         return mapToDTO(resourceRepository.save(resource));
     }
 
-    public List<ResourceImage> getImages(String resourceId) {
-        return resourceImageRepository.findByResourceId(resourceId);
-    }
-
-    public smart_campus_api.entity.ResourceImage addImage(String id, org.springframework.web.multipart.MultipartFile file, String caption, boolean isPrimary) throws java.io.IOException {
-        Resource resource = resourceRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Resource not found: " + id));
-
-        if (resourceImageRepository.countByResourceId(id) >= 5) {
-            throw new RuntimeException("Maximum 5 images allowed per resource");
-        }
-
-        String imageUrl = imageStorageService.saveImage(file);
-
-        smart_campus_api.entity.ResourceImage image = smart_campus_api.entity.ResourceImage.builder()
-                .resource(resource)
-                .imageUrl(imageUrl)
-                .caption(caption)
-                .isPrimary(isPrimary)
-                .uploadedBy("system")
-                .build();
-
-        if (isPrimary) {
-            resource.setImageUrl(imageUrl);
-            resourceRepository.save(resource);
-        }
-
-        return resourceImageRepository.save(image);
-    }
-
-    public void deleteImage(String resourceId, String imageId) throws java.io.IOException {
-        smart_campus_api.entity.ResourceImage image = resourceImageRepository.findById(imageId)
-                .orElseThrow(() -> new RuntimeException("Image not found: " + imageId));
-        imageStorageService.deleteImage(image.getImageUrl());
-        resourceImageRepository.deleteById(imageId);
-    }
 
 }

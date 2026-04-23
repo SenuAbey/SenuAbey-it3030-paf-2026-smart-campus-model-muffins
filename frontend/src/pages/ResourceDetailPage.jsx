@@ -59,7 +59,7 @@ export default function ResourceDetailPage() {
         toast.success("Resource deleted!");
         navigate("/");
       } else {
-        toast.error("Failed to delete - there is a dependency regarding this resource");
+        toast.error("Failed to delete - there is a dependecy regarding this resource");
       }
     } catch {
       toast.error("Failed to delete");
