@@ -7,12 +7,12 @@ import AppHeader from "../components/AppHeader";
 
 const statusColor = {
   ACTIVE: "#1D9E75",
-  OUT_OF_SERVICE: "#E24B4A",
   UNDER_MAINTENANCE: "#BA7517",
+  OUT_OF_SERVICE: "#E24B4A",
   DECOMMISSIONED: "#888780"
 };
 
-const STATUSES = ["ACTIVE", "OUT_OF_SERVICE", "UNDER_MAINTENANCE", "DECOMMISSIONED"];
+const STATUSES = ["ACTIVE", "UNDER_MAINTENANCE","OUT_OF_SERVICE", "DECOMMISSIONED"];
 
 export default function ResourceDetailPage() {
   const { id } = useParams();
