@@ -4,6 +4,11 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.persistence.CollectionTable;
+import jakarta.persistence.ElementCollection;
+import jakarta.persistence.JoinColumn;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -57,6 +62,11 @@ public class Resource {
     @ManyToOne
     @JoinColumn(name = "group_id")
     private ResourceGroup group;
+
+    @ElementCollection
+    @CollectionTable(name = "resource_availability_windows",
+            joinColumns = @JoinColumn(name = "resource_id"))
+    private List<AvailabilityWindow> availabilityWindows = new ArrayList<>();
 
     private String createdBy;
 

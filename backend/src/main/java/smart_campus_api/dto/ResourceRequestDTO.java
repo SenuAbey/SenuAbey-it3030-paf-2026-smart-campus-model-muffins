@@ -4,6 +4,9 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
+
+import java.util.ArrayList;
+import java.util.List;
 import smart_campus_api.enums.BookingTier;
 import smart_campus_api.enums.ResourceStatus;
 import smart_campus_api.enums.ResourceType;
@@ -32,4 +35,5 @@ public class ResourceRequestDTO {
     private Integer maxBookingHours = 4;
     private Integer maxAdvanceDays = 14;
 
+    private List<smart_campus_api.entity.AvailabilityWindow> availabilityWindows = new ArrayList<>();
 }

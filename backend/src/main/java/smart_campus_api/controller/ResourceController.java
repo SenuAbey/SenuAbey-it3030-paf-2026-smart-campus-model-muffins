@@ -93,4 +93,38 @@ public class ResourceController {
         }
     }
 
+    // GET - Get all images for a resource
+    @GetMapping("/{id}/images")
+    public ResponseEntity<List<smart_campus_api.entity.ResourceImage>> getImages(@PathVariable String id) {
+        return ResponseEntity.ok(resourceService.getImages(id));
+    }
+
+    // POST - Upload additional image
+    @PostMapping("/{id}/images")
+    public ResponseEntity<smart_campus_api.entity.ResourceImage> addImage(
+            @PathVariable String id,
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(required = false) String caption,
+            @RequestParam(defaultValue = "false") boolean isPrimary) {
+        try {
+            return ResponseEntity.status(HttpStatus.CREATED)
+                    .body(resourceService.addImage(id, file, caption, isPrimary));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+    // DELETE - Delete an image
+    @DeleteMapping("/{id}/images/{imageId}")
+    public ResponseEntity<Void> deleteImage(
+            @PathVariable String id,
+            @PathVariable String imageId) {
+        try {
+            resourceService.deleteImage(id, imageId);
+            return ResponseEntity.noContent().build();
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
 }

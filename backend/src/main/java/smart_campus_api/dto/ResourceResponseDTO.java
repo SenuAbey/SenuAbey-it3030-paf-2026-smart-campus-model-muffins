@@ -1,5 +1,6 @@
 package smart_campus_api.dto;
 
+import java.util.List;
 import lombok.Builder;
 import lombok.Data;
 import smart_campus_api.enums.BookingTier;
@@ -29,4 +30,6 @@ public class ResourceResponseDTO {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private boolean availableNow;
+    private List<smart_campus_api.entity.AvailabilityWindow> availabilityWindows;
+
 }
