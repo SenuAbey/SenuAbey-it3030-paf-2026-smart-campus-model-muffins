@@ -14,6 +14,11 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.time.LocalDateTime;
 
+//This is the business logic layer. All the rules, validations, and decisions live here.
+// The controller just receives HTTP requests and passes them here.
+// The repository just talks to the database. This layer sits between them and makes all the decisions.
+
+
 @Service
 public class BookingService {
 
@@ -25,6 +30,8 @@ public class BookingService {
 
     @Autowired
     private NotificationService notificationService;
+
+    //validations
 
     public BookingResponseDTO createBooking(BookingRequestDTO dto) {
         // 1. Find the resource

@@ -32,7 +32,7 @@ function StatusBadge({ status }) {
 }
 
 export default function AdminBookingsPage() {
-  const navigate = useNavigate();
+  const navigate = useNavigate();                                     // State Variables
   const { role } = useContext(RoleContext);
   const { } = useAuthStore();
   const isAdmin = role === "ADMIN";
@@ -46,7 +46,7 @@ export default function AdminBookingsPage() {
   const [processingId, setProcessingId] = useState(null);
   const [qrBooking, setQrBooking] = useState(null);
 
-  useEffect(() => {
+  useEffect(() => {     //Auth Guard + Load Data
     // Redirect non-admins away
     if (!isAdmin) { navigate("/bookings"); return; }
     fetchAll();

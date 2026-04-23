@@ -1,12 +1,12 @@
 import { useState } from 'react';
 import axios from 'axios';
 import { useAuthStore } from '../store/authStore';
-
+//QR Code Popup page
 //const API = "http://localhost:8081/api/v1";
 const API = "http://192.168.1.245:8081/api/v1";
 
 export default function QRCodeModal({ booking, onClose }) {
-  const [qrImage, setQrImage] = useState(null);
+  const [qrImage, setQrImage] = useState(null);    //Stores the QR image URL
   const [loading, setLoading] = useState(false);
   const token = useAuthStore.getState().token;
 

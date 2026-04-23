@@ -3,7 +3,7 @@ package smart_campus_api.entity;
 import jakarta.persistence.*;
 import smart_campus_api.enums.BookingStatus;
 import java.time.LocalDateTime;
-
+// represents the bookings table in the PostgreSQL database.
 @Entity
 @Table(name = "bookings")
 public class Booking {

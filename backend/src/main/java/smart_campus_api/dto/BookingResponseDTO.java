@@ -2,6 +2,9 @@ package smart_campus_api.dto;
 
 import smart_campus_api.enums.BookingStatus;
 import java.time.LocalDateTime;
+//This is the output object. When the backend responds to any booking request, it converts the Booking entity into this DTO and sends it as JSON.
+// It controls exactly what data is sent to the frontend.
+//what the API sends back to the frontend:
 
 public class BookingResponseDTO {
     private Long id;

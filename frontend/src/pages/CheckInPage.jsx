@@ -3,6 +3,8 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useAuthStore } from '../store/authStore';
 
+//QR scan landing page - shows booking details and allows user to confirm check-in
+
 //const API = "http://localhost:8081/api/v1";
 const API = "http://192.168.1.245:8081/api/v1";
 

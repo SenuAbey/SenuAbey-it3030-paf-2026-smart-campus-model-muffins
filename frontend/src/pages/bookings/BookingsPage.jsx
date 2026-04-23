@@ -1,17 +1,17 @@
 import { useState, useEffect, useContext } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import axios from "axios";
+import axios from "axios"; //Used to make HTTP requests (GET, POST, PATCH) to the Spring Boot backend.
 import toast, { Toaster } from "react-hot-toast";
 import { RoleContext } from "../../App";
 import { useAuthStore } from "../../store/authStore";
 import AppHeader from '../../components/AppHeader';
 import QRCodeModal from '../../components/QRCodeModal';
 
-const API = "http://localhost:8081/api/v1";
+const API = "http://localhost:8081/api/v1";//base url for backend calls
 
 function authConfig() {
   const token = useAuthStore.getState().token;
-  return token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+  return token ? { headers: { Authorization: `Bearer ${token}` } } : {}; //This function is called before every axios request.
 }
 
 const STATUS_META = {
@@ -24,7 +24,7 @@ const STATUS_META = {
 function StatusBadge({ status }) {
   const m = STATUS_META[status] || STATUS_META.PENDING;
   return (
-    <span style={{
+    <span style={{  
       fontSize: "11px", fontWeight: "700", padding: "3px 10px", borderRadius: "20px",
       background: m.bg, color: m.color, display: "inline-flex", alignItems: "center", gap: "4px"
     }}>{m.icon} {m.label}</span>
@@ -113,7 +113,7 @@ function BookingCard({ booking, onCancel, onShowQR }) {
   );
 }
 
-export default function BookingsPage() {
+export default function BookingsPage() { 
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
@@ -137,7 +137,7 @@ export default function BookingsPage() {
     startTime: "", endTime: "", purpose: "", attendees: 1,
   });
 
-  useEffect(() => {
+  useEffect(() => {    //Load Resources on Mount
     axios.get(`${API}/resources?size=100`, authConfig())
       .then(r => setResources(r.data.content || r.data))
       .catch(() => {});
@@ -156,6 +156,7 @@ export default function BookingsPage() {
     } catch { } finally { setLoading(false); }
   };
 
+  // Form Validation + API Call
   const handleSubmit = async () => {
     if (!form.resourceId) { toast.error("Please select a resource"); return; }
     if (!form.bookedBy)   { toast.error("Please enter your email"); return; }
