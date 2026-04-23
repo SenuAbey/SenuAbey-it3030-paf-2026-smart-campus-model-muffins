@@ -50,9 +50,17 @@ export default function ResourceDetailPage() {
   const handleDelete = async () => {
     if (!window.confirm("Delete this resource?")) return;
     try {
-      await deleteResource(id);
-      toast.success("Resource deleted!");
-      navigate("/");
+      const token = localStorage.getItem('token');
+      const res = await fetch(`http://localhost:8081/api/v1/resources/${id}`, {
+        method: "DELETE",
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
+      if (res.ok) {
+        toast.success("Resource deleted!");
+        navigate("/");
+      } else {
+        toast.error("Failed to delete - there is a dependecy regarding this resource");
+      }
     } catch {
       toast.error("Failed to delete");
     }
@@ -120,12 +128,23 @@ export default function ResourceDetailPage() {
               const formData = new FormData();
               formData.append("file", file);
               try {
+                const token = localStorage.getItem('token');
                 const res = await fetch(`http://localhost:8081/api/v1/resources/${id}/image`, {
-                  method: "POST", body: formData
+                  method: "POST",
+                  headers: token ? { Authorization: `Bearer ${token}` } : {},
+                  body: formData
                 });
-                if (res.ok) { toast.success("Image uploaded!"); fetchResource(); }
-                else toast.error("Upload failed!");
-              } catch { toast.error("Upload failed!"); }
+                const data = await res.json();
+                if (res.ok) {
+                  toast.success("Image uploaded!");
+                  fetchResource();
+                } else {
+                  toast.error("Upload failed: " + (data.error || data.message || "Check if you are logged in as Admin"));
+                }
+              } catch (err) {
+                console.error(err);
+                toast.error("Upload failed!");
+              }
             }}
           />
           <label htmlFor="img-upload" style={{

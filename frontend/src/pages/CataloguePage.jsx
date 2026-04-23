@@ -19,10 +19,10 @@ const STATUSES = ["ACTIVE", "OUT_OF_SERVICE", "UNDER_MAINTENANCE", "DECOMMISSION
 const TIERS = ["INSTANT", "DELEGATED", "ADMIN"];
 
 const TYPE_META = {
-  LECTURE_HALL:    { label: "Lecture Halls",     emoji: "🏫", img: "https://images.unsplash.com/photo-1541339907198-e08756ebafe3?w=600&q=80" },
-  LAB:             { label: "Laboratories",       emoji: "🔬", img: "https://images.unsplash.com/photo-1581092921461-eab62e92c731?w=600&q=80" },
+  LECTURE_HALL:    { label: "Lecture Halls",     emoji: "🏫", img: "https://images.unsplash.com/photo-1758270704286-83476deb3bd1?w=600&q=80" },
+  LAB:             { label: "Laboratories",       emoji: "🔬", img: "https://images.unsplash.com/photo-1643199187247-b3b6009bf0bb?w=600&q=80" },
   MEETING_ROOM:    { label: "Meeting Rooms",      emoji: "🤝", img: "https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=600&q=80" },
-  EQUIPMENT:       { label: "Equipment",          emoji: "🎥", img: "https://images.unsplash.com/photo-1558494949-ef010cbdcc51?w=600&q=80" },
+  EQUIPMENT:       { label: "Equipment",          emoji: "🎥", img: "https://images.unsplash.com/photo-1528395874238-34ebe249b3f2?w=600&q=80" },
   AUDITORIUM:      { label: "Auditoriums",        emoji: "🎭", img: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=600&q=80" },
   GYM:             { label: "Gymnasium",          emoji: "💪", img: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=600&q=80" },
   SWIMMING_POOL:   { label: "Swimming Pool",      emoji: "🏊", img: "https://images.unsplash.com/photo-1575429198097-0414ec08e8cd?w=600&q=80" },
