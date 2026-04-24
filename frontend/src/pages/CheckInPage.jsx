@@ -4,7 +4,7 @@ import axios from 'axios';
 import { useAuthStore } from '../store/authStore';
 
 //const API = "http://localhost:8081/api/v1";
-const API = "http://172.20.10.6:8081/api/v1"; 
+const API = "http://172.28.6.75:8081/api/v1"; 
 
 export default function CheckInPage() {
   const [searchParams] = useSearchParams();
