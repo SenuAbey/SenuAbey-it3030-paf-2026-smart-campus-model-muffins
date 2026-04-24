@@ -19,10 +19,10 @@ const STATUSES = ["ACTIVE", "OUT_OF_SERVICE", "UNDER_MAINTENANCE", "DECOMMISSION
 const TIERS = ["INSTANT", "DELEGATED", "ADMIN"];
 
 const TYPE_META = {
-  LECTURE_HALL:    { label: "Lecture Halls",     emoji: "🏫", img: "https://images.unsplash.com/photo-1541339907198-e08756ebafe3?w=600&q=80" },
-  LAB:             { label: "Laboratories",       emoji: "🔬", img: "https://images.unsplash.com/photo-1581092921461-eab62e92c731?w=600&q=80" },
+  LECTURE_HALL:    { label: "Lecture Halls",     emoji: "🏫", img: "https://images.unsplash.com/photo-1758270704286-83476deb3bd1?w=600&q=80" },
+  LAB:             { label: "Laboratories",       emoji: "🔬", img: "https://images.unsplash.com/photo-1643199187247-b3b6009bf0bb?w=600&q=80" },
   MEETING_ROOM:    { label: "Meeting Rooms",      emoji: "🤝", img: "https://images.unsplash.com/photo-1497366754035-f200968a6e72?w=600&q=80" },
-  EQUIPMENT:       { label: "Equipment",          emoji: "🎥", img: "https://images.unsplash.com/photo-1558494949-ef010cbdcc51?w=600&q=80" },
+  EQUIPMENT:       { label: "Equipment",          emoji: "🎥", img: "https://images.unsplash.com/photo-1528395874238-34ebe249b3f2?w=600&q=80" },
   AUDITORIUM:      { label: "Auditoriums",        emoji: "🎭", img: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=600&q=80" },
   GYM:             { label: "Gymnasium",          emoji: "💪", img: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=600&q=80" },
   SWIMMING_POOL:   { label: "Swimming Pool",      emoji: "🏊", img: "https://images.unsplash.com/photo-1575429198097-0414ec08e8cd?w=600&q=80" },
@@ -270,11 +270,48 @@ export default function CataloguePage() {
 
         {view === "resources" && (
           <>
+            {/* Status summary bar */}
+            <div style={{
+              display: "flex", gap: "8px", marginBottom: "12px", flexWrap: "wrap"
+            }}>
+              {["ACTIVE", "UNDER_MAINTENANCE", "OUT_OF_SERVICE", "DECOMMISSIONED"].map(s => {
+                const count = resources.filter(r => r.status === s).length;
+                if (count === 0) return null;
+                return (
+                  <div key={s} onClick={() => setFilters({ status: filters.status === s ? "" : s })}
+                    style={{
+                      display: "flex", alignItems: "center", gap: "6px",
+                      padding: "5px 12px", borderRadius: "20px", cursor: "pointer",
+                      background: filters.status === s ? statusColor[s] : "#fff",
+                      border: `1px solid ${statusColor[s]}`,
+                      color: filters.status === s ? "#fff" : statusColor[s],
+                      fontSize: "12px", fontWeight: "600", transition: "all 0.2s"
+                    }}>
+                    <span style={{
+                      width: "8px", height: "8px", borderRadius: "50%",
+                      background: filters.status === s ? "#fff" : statusColor[s],
+                      display: "inline-block"
+                    }} />
+                    {s.replace(/_/g, " ")} ({count})
+                  </div>
+                );
+              })}
+              {filters.status && (
+                <div onClick={() => setFilters({ status: "" })} style={{
+                  padding: "5px 12px", borderRadius: "20px", cursor: "pointer",
+                  background: "transparent", border: "1px solid #ddd",
+                  color: "#888", fontSize: "12px"
+                }}>Clear filter ✕</div>
+              )}
+            </div>
+
+            {/* Filters bar */}
             <div className="filters-bar">
               <input placeholder="Search by name..." value={filters.search}
                 onChange={(e) => setFilters({ search: e.target.value })}
                 className="form-input" style={{ flex: 1, minWidth: "160px" }} />
-              <select value={filters.status} onChange={(e) => setFilters({ status: e.target.value })} className="form-input" style={{ width: "auto" }}>
+              <select value={filters.status} onChange={(e) => setFilters({ status: e.target.value })}
+                className="form-input" style={{ width: "auto" }}>
                 <option value="">All statuses</option>
                 {STATUSES.map(s => <option key={s} value={s}>{s.replace(/_/g, " ")}</option>)}
               </select>
