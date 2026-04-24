@@ -7,12 +7,12 @@ import AppHeader from "../components/AppHeader";
 
 const statusColor = {
   ACTIVE: "#1D9E75",
-  OUT_OF_SERVICE: "#E24B4A",
   UNDER_MAINTENANCE: "#BA7517",
+  OUT_OF_SERVICE: "#E24B4A",
   DECOMMISSIONED: "#888780"
 };
 
-const STATUSES = ["ACTIVE", "OUT_OF_SERVICE", "UNDER_MAINTENANCE", "DECOMMISSIONED"];
+const STATUSES = ["ACTIVE", "UNDER_MAINTENANCE","OUT_OF_SERVICE", "DECOMMISSIONED"];
 
 export default function ResourceDetailPage() {
   const { id } = useParams();
@@ -50,9 +50,17 @@ export default function ResourceDetailPage() {
   const handleDelete = async () => {
     if (!window.confirm("Delete this resource?")) return;
     try {
-      await deleteResource(id);
-      toast.success("Resource deleted!");
-      navigate("/");
+      const token = localStorage.getItem('token');
+      const res = await fetch(`http://localhost:8081/api/v1/resources/${id}`, {
+        method: "DELETE",
+        headers: token ? { Authorization: `Bearer ${token}` } : {}
+      });
+      if (res.ok) {
+        toast.success("Resource deleted!");
+        navigate("/");
+      } else {
+        toast.error("Failed to delete - there is a dependecy regarding this resource");
+      }
     } catch {
       toast.error("Failed to delete");
     }
@@ -112,29 +120,42 @@ export default function ResourceDetailPage() {
         )}
 
         {/* Image Upload — shown to everyone (member 1's original) */}
-        <div style={{ marginTop: "16px" }}>
-          <input type="file" accept="image/*" id="img-upload" style={{ display: "none" }}
-            onChange={async (e) => {
-              const file = e.target.files[0];
-              if (!file) return;
-              const formData = new FormData();
-              formData.append("file", file);
-              try {
-                const res = await fetch(`http://localhost:8081/api/v1/resources/${id}/image`, {
-                  method: "POST", body: formData
-                });
-                if (res.ok) { toast.success("Image uploaded!"); fetchResource(); }
-                else toast.error("Upload failed!");
-              } catch { toast.error("Upload failed!"); }
-            }}
-          />
-          <label htmlFor="img-upload" style={{
-            display: "inline-block", padding: "7px 16px", borderRadius: "8px",
-            border: "1px solid #ddd", cursor: "pointer", fontSize: "13px"
-          }}>
-            {resource.imageUrl ? "Change Image" : "Upload Image"}
-          </label>
-        </div>
+        {isAdmin && (
+          <div style={{ marginTop: "16px" }}>
+            <input type="file" accept="image/*" id="img-upload" style={{ display: "none" }}
+              onChange={async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const formData = new FormData();
+                formData.append("file", file);
+                try {
+                  const token = localStorage.getItem('token');
+                  const res = await fetch(`http://localhost:8081/api/v1/resources/${id}/image`, {
+                    method: "POST",
+                    headers: token ? { Authorization: `Bearer ${token}` } : {},
+                    body: formData
+                  });
+                  const data = await res.json();
+                  if (res.ok) {
+                    toast.success("Image uploaded!");
+                    fetchResource();
+                  } else {
+                    toast.error("Upload failed: " + (data.error || data.message || "Check if you are logged in as Admin"));
+                  }
+                } catch (err) {
+                  console.error(err);
+                  toast.error("Upload failed!");
+                }
+              }}
+            />
+            <label htmlFor="img-upload" style={{
+              display: "inline-block", padding: "7px 16px", borderRadius: "8px",
+              border: "1px solid #ddd", cursor: "pointer", fontSize: "13px"
+            }}>
+              {resource.imageUrl ? "Change Image" : "Upload Image"}
+            </label>
+          </div>
+        )}
       </div>
 
       {/* Details Grid */}
@@ -155,6 +176,39 @@ export default function ResourceDetailPage() {
             <div style={{ fontSize: "14px", fontWeight: "600" }}>{value}</div>
           </div>
         ))}
+      </div>
+
+      {/* Status Timeline */}
+      <div style={{
+        background: "#fff", border: "1px solid #eee", borderRadius: "12px",
+        padding: "20px", marginBottom: "16px"
+      }}>
+        <div style={{ fontSize: "13px", fontWeight: "600", marginBottom: "14px" }}>Resource Status</div>
+        <div style={{ display: "flex", gap: "0", alignItems: "center" }}>
+          {["ACTIVE", "UNDER_MAINTENANCE", "OUT_OF_SERVICE", "DECOMMISSIONED"].map((s, i, arr) => (
+            <div key={s} style={{ display: "flex", alignItems: "center", flex: 1 }}>
+              <div style={{ display: "flex", flexDirection: "column", alignItems: "center", flex: 1 }}>
+                <div style={{
+                  width: "32px", height: "32px", borderRadius: "50%",
+                  background: resource.status === s ? statusColor[s] : "#f0f0f0",
+                  border: `2px solid ${resource.status === s ? statusColor[s] : "#ddd"}`,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontSize: "14px"
+                }}>
+                  {resource.status === s ? "✓" : ""}
+                </div>
+                <div style={{
+                  fontSize: "9px", marginTop: "4px", textAlign: "center",
+                  color: resource.status === s ? statusColor[s] : "#aaa",
+                  fontWeight: resource.status === s ? "700" : "400"
+                }}>{s.replace(/_/g, " ")}</div>
+              </div>
+              {i < arr.length - 1 && (
+                <div style={{ height: "2px", flex: 1, background: "#eee", marginBottom: "16px" }} />
+              )}
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* ── STUDENT: Book This Resource button ── */}
